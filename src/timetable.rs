@@ -35,7 +35,10 @@ pub async fn timetable(
     // Find the timetable
     let raw_timetable = document.select(&sel_table).next().unwrap();
 
-    // Find days
+    /* We are finding size of days in the timetable
+     * so we can increment it when we will cross the timetable */
+
+    // Find days size
     let days_size: Vec<_> = raw_timetable
         .select(&sel_thead)
         .next()
@@ -62,9 +65,10 @@ pub async fn timetable(
         })
         .collect();
 
-    println!("{:#?}", days);
+    /* We are now iterating over all the 15-minute intervals to find courses */
+    // TODO
 
-    (vec![], (0, vec![]))
+    todo!()
 }
 
 /// Get timetable webpage
