@@ -2,7 +2,7 @@
 
 > !! Fork de [cal8tor](https://git.mylloon.fr/Anri/cal8tor) !!
 >
-> !! En cours de dev -> ne fonctionne pas !!
+> !! [En cours de dev](https://git.mylloon.fr/Anri/cal7tor/pulls/1) -> ne fonctionne pas !!
 
 Extracteur d'emploi du temps pour les masters d'informatique de Paris Cité (Diderot)
 
