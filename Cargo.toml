@@ -1,11 +1,11 @@
 [package]
-name = "cal8tor"
-version = "0.4.5"
+name = "cal7tor"
+version = "0.5.0"
 authors = ["Mylloon"]
 edition = "2021"
-description = "Extractor of the calendar of the IT degree of university Paris 8"
+description = "Timetable extractor for the Paris Cité master's degree in IT"
 readme = "README.md"
-repository = "https://git.kennel.ml/Anri/cal8tor"
+repository = "https://git.mylloon.fr/Anri/cal7tor"
 keywords = ["scrape", "calendar"]
 publish = false
 license = "AGPL-3.0-or-later"

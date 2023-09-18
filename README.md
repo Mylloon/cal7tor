@@ -1,15 +1,13 @@
-# cal8tor • *cal*endar P*8* extrac*tor*
+# cal7tor • *cal*endar P*7* extrac*tor*
 
-Extracteur d'emploi du temps pour la licence d'informatique de Paris 8
+> !! Fork de [cal8tor](https://git.mylloon.fr/Anri/cal8tor) !!
+> !! En cours de dev -> ne fonctionne pas !!
+
+Extracteur d'emploi du temps pour les masters d'informatique de Paris Cité (Diderot)
 
 [![dependency status](https://deps.rs/repo/gitea/git.mylloon.fr/Anri/cal8tor/status.svg)](https://deps.rs/repo/gitea/git.mylloon.fr/Anri/cal8tor)
 
 ## Installation
-
-### Arch
-
-cal8tor est disponible sur le AUR : [`cal8tor`](https://aur.archlinux.org/packages/cal8tor)
-et [`cal8tor-git`](https://aur.archlinux.org/packages/cal8tor-git).
 
 ### Manuellement
 
@@ -20,15 +18,15 @@ Cf. [Compilation et installation](#compilation-et-installation).
 Pour afficher la page d'aide
 
 ```
-$ cal8tor --help
+$ cal7tor --help
 ```
 
 ## Voir le calendrier dans le terminal
 
-Pour les L2-X par exemple, lance :
+Pour les LP par exemple, lance :
 
 ```bash
-$ cal8tor l2-X
+$ cal7tor lp
 ```
 
 > Le rendu peut parfois être difficile à lire, n'hésites pas à utiliser l'option
@@ -36,10 +34,10 @@ $ cal8tor l2-X
 
 ## Exporter le calendrier au format `.ics`
 
-Pour les L1-A par exemple, lance :
+Pour les LP par exemple, lance :
 
 ```bash
-$ cal8tor L1A --export calendar.ics
+$ cal8tor LP --export calendar.ics
 ```
 
 > Le fichier comprend le fuseau horaire pour `Europe/Paris` et est
@@ -58,7 +56,7 @@ Vous aurez besoin de Rust pour compiler le programme.
 1. Clone le dépôt et s'y rendre
 
 ```bash
-$ git clone https://git.mylloon.fr/Anri/cal8tor.git && cd cal8tor
+$ git clone https://git.mylloon.fr/Anri/cal7tor.git && cd cal7tor
 ```
 
 2. Compiler et installer l'application
@@ -67,7 +65,7 @@ $ git clone https://git.mylloon.fr/Anri/cal8tor.git && cd cal8tor
 $ cargo install --path .
 ```
 
-3. Tu peux maintenant supprimer le dossier `cal8tor` !
+3. Tu peux maintenant supprimer le dossier `cal7tor` !
 
 ---
 

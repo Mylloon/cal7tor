@@ -113,7 +113,7 @@ fn anglophonization(date: &str) -> String {
 /// Turn a string to a DateTime
 fn get_date(date: &str) -> DateTime<Utc> {
     // Use and keep UTC time, we have the hour set to 12h and
-    // Paris 8 is in France so there is no problems
+    // Paris 7 is in France so there is no problems
     DateTime::parse_from_str(&anglophonization(date), "%e %B %Y %H:%M %z")
         .unwrap()
         .into()
