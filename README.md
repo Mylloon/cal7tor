@@ -6,7 +6,7 @@
 
 Extracteur d'emploi du temps pour les masters d'informatique de Paris Cité (Diderot)
 
-[![dependency status](https://deps.rs/repo/gitea/git.mylloon.fr/Anri/cal8tor/status.svg)](https://deps.rs/repo/gitea/git.mylloon.fr/Anri/cal8tor)
+[![dependency status](https://deps.rs/repo/gitea/git.mylloon.fr/Anri/cal7tor/status.svg)](https://deps.rs/repo/gitea/git.mylloon.fr/Anri/cal7tor)
 
 ## Installation
 
