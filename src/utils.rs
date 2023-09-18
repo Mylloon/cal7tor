@@ -2,18 +2,11 @@ pub mod models;
 
 /// Panic if an error happened
 pub fn check_errors(html: &String, loc: &str) {
+    let no_timetable = "Aucun créneau horaire affecté";
     match html {
-        t if t.contains(&err_code(429)) => panic!(
-            "URL: {} • HTTP 429: Slow down - Rate limited (too many access attempts detected)",
-            loc
-        ),
+        t if t.contains(no_timetable) => panic!("URL: {} • {}", loc, no_timetable),
         _ => (),
     }
-}
-
-/// Create String error code
-fn err_code(code: i32) -> String {
-    format!("HTTP Code : {}", code)
 }
 
 /// Print a line for the table

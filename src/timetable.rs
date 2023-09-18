@@ -12,19 +12,24 @@ pub mod models;
 
 /// Fetch the timetable for a class
 pub async fn timetable(
-    year: i8,
+    level: i8,
     semester_opt: Option<i8>,
-    letter: Option<char>,
+    year_opt: Option<i32>,
+    pathway: &str,
     user_agent: &str,
 ) -> (Vec<String>, (usize, Vec<models::Day>)) {
-    let semester = get_semester(semester_opt, letter);
+    let semester = get_semester(semester_opt);
 
-    let document = get_webpage(year, semester, letter, user_agent)
+    let year = get_year(year_opt, semester);
+
+    let document = get_webpage(level, semester, &year, user_agent)
         .await
         .expect("Can't reach timetable website.");
 
+    (vec![], (0, vec![]))
+
     // Selectors
-    let sel_table = Selector::parse("table").unwrap();
+    /* let sel_table = Selector::parse("table").unwrap();
     let sel_tr = Selector::parse("tr").unwrap();
     let sel_tbody = Selector::parse("tbody").unwrap();
     let sel_th = Selector::parse("th").unwrap();
@@ -116,59 +121,17 @@ pub async fn timetable(
         panic!("Error when building the timetable.");
     }
 
-    (schedules, (semester as usize, timetable))
+    (schedules, (semester as usize, timetable)) */
 }
 
 /// Get timetable webpage
 async fn get_webpage(
-    year: i8,
+    level: i8,
     semester: i8,
-    letter: Option<char>,
+    year: &str,
     user_agent: &str,
 ) -> Result<Html, Box<dyn std::error::Error>> {
-    let url = {
-        let panic_semester_message = "Unknown semester.";
-        let panic_letter_message = "Unknown letter.";
-
-        let base_url = "https://informatique.up8.edu/licence-iv/edt";
-        let allow_letters_1 = match semester {
-            1 => ['a', 'b', 'c'],
-            2 => ['x', 'y', 'z'],
-            _ => panic!("{}", panic_semester_message),
-        };
-        let allow_letters_2_3 = match semester {
-            1 => ['a', 'b'],
-            2 => ['x', 'y'],
-            _ => panic!("{}", panic_semester_message),
-        };
-        match year {
-            1 => {
-                let c = letter.expect(panic_letter_message).to_ascii_lowercase();
-                if allow_letters_1.contains(&c) {
-                    format!("{}/l1-{}.html", base_url, c)
-                } else {
-                    panic!("{}", panic_letter_message)
-                }
-            }
-            2 => {
-                let c = letter.expect(panic_letter_message).to_ascii_lowercase();
-                if allow_letters_2_3.contains(&c) {
-                    format!("{}/l2-{}.html", base_url, c)
-                } else {
-                    panic!("{}", panic_letter_message)
-                }
-            }
-            3 => {
-                let c = letter.expect(panic_letter_message).to_ascii_lowercase();
-                if allow_letters_2_3.contains(&c) {
-                    format!("{}/l3-{}.html", base_url, c)
-                } else {
-                    panic!("{}", panic_letter_message)
-                }
-            }
-            _ => panic!("Unknown year."),
-        }
-    };
+    let url = format!("https://silice.informatique.univ-paris-diderot.fr/ufr/U{}/EDT/visualiserEmploiDuTemps.php?quoi=M{},{}", year, level, semester);
 
     // Use custom User-Agent
     let client = reqwest::Client::builder().user_agent(user_agent).build()?;
@@ -314,34 +277,37 @@ pub fn build(timetable: T, dates: D) -> Vec<models::Course> {
     semester
 }
 
-/// Get the current semester depending on the letter or the current date
-fn get_semester(semester: Option<i8>, letter: Option<char>) -> i8 {
+/// Get the current semester depending on the current date
+fn get_semester(semester: Option<i8>) -> i8 {
     match semester {
         // Force the asked semester
         Some(n) => n,
         // Find the potential semester
-        None => match letter {
-            // Based on letter (kinda accurate)
-            Some(c) => {
-                if c.to_ascii_uppercase() as i8 > 77 {
-                    // If letter is N or after
-                    2
-                } else {
-                    // If letter is before N
-                    1
-                }
+        None => {
+            if Utc::now().month() > 6 {
+                // From july to december
+                1
+            } else {
+                // from january to june
+                2
             }
-            // Based on the time (kinda less accurate)
-            None => {
-                if Utc::now().month() > 6 {
-                    // From july to december
-                    1
-                } else {
-                    // from january to june
-                    2
-                }
-            }
-        },
+        }
+    }
+}
+
+/// Get the current year depending on the current date
+fn get_year(year: Option<i32>, semester: i8) -> String {
+    let wanted_year = match year {
+        // Force the asked semester
+        Some(n) => n,
+        // Find the potential semester
+        None => Utc::now().year(),
+    };
+
+    if semester == 1 {
+        format!("{}-{}", wanted_year, wanted_year + 1)
+    } else {
+        format!("{}-{}", wanted_year - 1, wanted_year)
     }
 }
 
