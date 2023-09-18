@@ -26,102 +26,45 @@ pub async fn timetable(
         .await
         .expect("Can't reach timetable website.");
 
-    (vec![], (0, vec![]))
-
     // Selectors
-    /* let sel_table = Selector::parse("table").unwrap();
+    let sel_table = Selector::parse("table").unwrap();
+    let sel_thead = Selector::parse("thead").unwrap();
     let sel_tr = Selector::parse("tr").unwrap();
-    let sel_tbody = Selector::parse("tbody").unwrap();
     let sel_th = Selector::parse("th").unwrap();
-    let sel_td = Selector::parse("td").unwrap();
-    let sel_em = Selector::parse("em").unwrap();
-    let sel_small = Selector::parse("small").unwrap();
-    let sel_strong = Selector::parse("strong").unwrap();
 
     // Find the timetable
     let raw_timetable = document.select(&sel_table).next().unwrap();
 
-    // Find the slots available for the timetable
-    let raw_schedules = raw_timetable.select(&sel_tr).next().unwrap();
-
-    // Find availables schedules
-    let mut schedules = Vec::new();
-    for time in raw_schedules.select(&sel_th) {
-        schedules.push(time.inner_html());
-    }
-
-    // Find the timetable values
-    let raw_timetable_values = raw_timetable.select(&sel_tbody).next().unwrap();
-
-    // For each days
-    let mut timetable = Vec::new();
-    let span_regex = Regex::new(r"<span.*</span>").unwrap();
-    for day in raw_timetable_values.select(&sel_tr) {
-        let mut courses_vec = Vec::new();
-        let mut location_tracker = 0;
-        for course in day.select(&sel_td) {
-            if course.inner_html() == "—" {
-                courses_vec.push(None);
-                location_tracker += 1;
-            } else {
-                courses_vec.push(Some(models::Course {
-                    name: match course.select(&sel_em).next() {
-                        Some(value) => span_regex.replace(&value.inner_html(), " ").to_string(),
-                        None => span_regex
-                            .replace(course.inner_html().split("<br>").next().unwrap(), " ")
-                            .to_string(),
-                    },
-                    professor: match course
-                        .select(&sel_small)
-                        .next()
-                        .unwrap()
-                        .inner_html()
-                        .split("<br>")
-                        .next()
-                    {
-                        Some(data) => {
-                            if data.contains("</strong>") {
-                                // This is the room, so there is no professor assigned
-                                // to this courses yet
-                                None
-                            } else {
-                                Some(data.to_string())
-                            }
-                        }
-                        None => None,
-                    },
-                    room: capitalize(&mut match course.select(&sel_strong).next() {
-                        Some(el) => el.inner_html().replace("<br>", ""),
-                        // Error in the site, silently passing... (the room is probably at the professor member)
-                        None => String::new(),
-                    }),
-                    start: location_tracker,
-                    size: match course.value().attr("colspan") {
-                        Some(i) => i.parse().unwrap(),
-                        None => 1,
-                    },
-                    dtstart: None,
-                    dtend: None,
-                }));
-
-                match &courses_vec[courses_vec.len() - 1] {
-                    Some(course) => location_tracker += course.size,
-                    None => location_tracker += 1,
-                }
-            }
-        }
-
-        timetable.push(models::Day {
-            name: day.select(&sel_th).next().unwrap().inner_html(),
-            courses: courses_vec,
+    // Find days
+    let days_size: Vec<_> = raw_timetable
+        .select(&sel_thead)
+        .next()
+        .unwrap()
+        .select(&sel_tr)
+        .next()
+        .unwrap()
+        .select(&sel_th)
+        .next()
+        .unwrap()
+        .next_siblings()
+        .flat_map(|i| {
+            let element = i.value().as_element().unwrap();
+            element
+                .attrs()
+                .filter_map(|f| {
+                    if f.0.contains("colspan") {
+                        Some(f.1)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>()
         })
-    }
+        .collect();
 
-    if !check_consistency(&schedules, &timetable) {
-        panic!("Error when building the timetable.");
-    }
+    println!("{:#?}", days);
 
-    (schedules, (semester as usize, timetable)) */
+    (vec![], (0, vec![]))
 }
 
 /// Get timetable webpage
