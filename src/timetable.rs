@@ -28,45 +28,23 @@ pub async fn timetable(
 
     // Selectors
     let sel_table = Selector::parse("table").unwrap();
-    let sel_thead = Selector::parse("thead").unwrap();
-    let sel_tr = Selector::parse("tr").unwrap();
-    let sel_th = Selector::parse("th").unwrap();
+    let sel_tbody = Selector::parse("tbody").unwrap();
+    let sel_td = Selector::parse("td").unwrap();
 
     // Find the timetable
     let raw_timetable = document.select(&sel_table).next().unwrap();
 
-    /* We are finding size of days in the timetable
-     * so we can increment it when we will cross the timetable */
-
-    // Find days size
-    let days_size: Vec<_> = raw_timetable
-        .select(&sel_thead)
-        .next()
-        .unwrap()
-        .select(&sel_tr)
-        .next()
-        .unwrap()
-        .select(&sel_th)
-        .next()
-        .unwrap()
-        .next_siblings()
-        .flat_map(|i| {
-            let element = i.value().as_element().unwrap();
-            element
-                .attrs()
-                .filter_map(|f| {
-                    if f.0.contains("colspan") {
-                        Some(f.1)
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<_>>()
-        })
-        .collect();
-
     /* We are now iterating over all the 15-minute intervals to find courses */
-    // TODO
+    for element in raw_timetable
+        .select(&sel_tbody)
+        .next()
+        .unwrap()
+        .select(&sel_td)
+    {
+        if let Some(i) = element.value().attr("title") {
+            println!("{}", i)
+        }
+    }
 
     todo!()
 }
