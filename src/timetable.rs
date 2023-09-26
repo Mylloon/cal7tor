@@ -1,7 +1,7 @@
-use chrono::{Datelike, Duration, TimeZone, Utc};
+use chrono::{Datelike, Duration, NaiveTime, TimeZone, Utc};
 use regex::Regex;
 use scraper::{Html, Selector};
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use crate::utils::{
     self,
@@ -35,15 +35,16 @@ pub async fn timetable(
     // Find the timetable
     let raw_timetable = document.select(&sel_table).next().unwrap();
 
-    let mut schedules = Vec::new();
+    let mut hours = Vec::new();
     for hour in 8..=20 {
         for minute in &[0, 15, 30, 45] {
             let hour_str = format!("{}h{:02}", hour, minute);
-            schedules.push(hour_str);
+            hours.push(hour_str);
         }
     }
 
     let mut timetable: Vec<models::Day> = Vec::new();
+    let mut schedules = Vec::new();
 
     raw_timetable
         .select(&sel_tbody)
@@ -58,11 +59,15 @@ pub async fn timetable(
                     .captures(i.value().attr("title").unwrap())
                     .unwrap();
 
-            let day: &str = matches
+            let day = matches
                 .name("day")
                 .unwrap()
                 .as_str();
 
+            let startime = matches
+            .name("startime")
+            .unwrap()
+            .as_str();
 
             let binding = i.select(&sel_b).last().unwrap().inner_html();
             let course = models::Course{
@@ -89,10 +94,7 @@ pub async fn timetable(
                 .unwrap().name("location")
                 .unwrap()
                 .as_str().to_owned(),
-                start: schedules.iter().position(|r| r == matches
-                    .name("startime")
-                    .unwrap()
-                    .as_str()).unwrap(),
+                start: hours.iter().position(|r| r == startime).unwrap(),
                 size: i.value().attr("rowspan").unwrap().parse::<usize >().unwrap(),
                 dtstart: None,
                 dtend: None,
@@ -108,6 +110,18 @@ pub async fn timetable(
                     courses: vec![Some(course)],
                 });
             }
+
+
+            let duration = Regex::new(r"(?P<h>\d{1,2})h(?P<m>\d{1,2})?")
+            .unwrap()
+            .captures(matches
+                .name("duration")
+                .unwrap()
+                .as_str()).unwrap();
+            schedules.push(format!("{}-{}", startime, NaiveTime::from_str(&startime.replace('h', ":")).unwrap().overflowing_add_signed(Duration::minutes(duration.name("h").unwrap().as_str().parse::<i64>().unwrap() * 60 + match duration.name("m") {
+                Some(x) => x.as_str().parse::<i64>().unwrap(),
+                None => 0
+            })).0.format("%Hh%M")));
         });
 
     if !check_consistency(&schedules, &timetable) {
