@@ -55,10 +55,9 @@ async fn main() {
         level,
         pathway.to_uppercase()
     );
-    let timetable =
-        timetable::timetable(level, args.semester, args.year, pathway, &user_agent).await;
+    let timetable = timetable::timetable(level, args.semester, args.year, &user_agent).await;
 
-    /* println!("Récupération des informations par rapport à l'année...");
+    println!("Récupération des informations par rapport à l'année...");
     let info = info::info(&user_agent).await;
 
     if args.export.is_some() {
@@ -74,5 +73,5 @@ async fn main() {
         println!("Affichage...");
         timetable::display(timetable, args.cl);
         println!("Vous devrez peut-être mettre votre terminal en plein écran si ce n'est pas déjà le cas.");
-    } */
+    }
 }

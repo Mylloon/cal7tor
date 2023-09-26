@@ -4,7 +4,7 @@ use scraper::{Html, Selector};
 use std::collections::HashMap;
 
 use crate::utils::{
-    self, capitalize,
+    self,
     models::{Position, TabChar},
 };
 
@@ -15,7 +15,6 @@ pub async fn timetable(
     level: i8,
     semester_opt: Option<i8>,
     year_opt: Option<i32>,
-    pathway: &str,
     user_agent: &str,
 ) -> (Vec<String>, (usize, Vec<models::Day>)) {
     let semester = get_semester(semester_opt);
@@ -30,23 +29,92 @@ pub async fn timetable(
     let sel_table = Selector::parse("table").unwrap();
     let sel_tbody = Selector::parse("tbody").unwrap();
     let sel_td = Selector::parse("td").unwrap();
+    let sel_small = Selector::parse("small").unwrap();
+    let sel_b = Selector::parse("b").unwrap();
 
     // Find the timetable
     let raw_timetable = document.select(&sel_table).next().unwrap();
 
-    /* We are now iterating over all the 15-minute intervals to find courses */
-    for element in raw_timetable
+    let mut schedules = Vec::new();
+    for hour in 8..=20 {
+        for minute in &[0, 15, 30, 45] {
+            let hour_str = format!("{}h{:02}", hour, minute);
+            schedules.push(hour_str);
+        }
+    }
+
+    let mut timetable: Vec<models::Day> = Vec::new();
+
+    raw_timetable
         .select(&sel_tbody)
         .next()
         .unwrap()
         .select(&sel_td)
-    {
-        if let Some(i) = element.value().attr("title") {
-            println!("{}", i)
-        }
+        .filter(|element| element.value().attr("title").is_some())
+        .for_each(|i| {
+            let matches =
+                Regex::new(r"(?P<type>COURS|TD|TP) (?P<name>.*) : (?P<day>(lundi|mardi|mercredi|jeudi|vendredi)) (?P<startime>.*) \(durée : (?P<duration>.*)\)")
+                    .unwrap()
+                    .captures(i.value().attr("title").unwrap())
+                    .unwrap();
+
+            let day: &str = matches
+                .name("day")
+                .unwrap()
+                .as_str();
+
+
+            let binding = i.select(&sel_b).last().unwrap().inner_html();
+            let course = models::Course{
+                typee: match matches
+                .name("type")
+                .unwrap()
+                .as_str() {
+                    "COURS" => models::Type::Cours,
+                    "TP" => models::Type::TP,
+                    "TD" => models::Type::TD,
+                    _ => panic!("Unknown type of course")
+                },
+                name: matches
+                .name("name")
+                .unwrap()
+                .as_str().to_owned(),
+                professor: match i.select(&sel_small).last().unwrap().inner_html() {
+                    i if i.starts_with("<span") => None,
+                    i => Some(i),
+                },
+                room: Regex::new(r"(<table.*<\/table>|<br>.*?<br>.*?)<br>(?P<location>.*?)<br>")
+                .unwrap()
+                .captures(&binding)
+                .unwrap().name("location")
+                .unwrap()
+                .as_str().to_owned(),
+                start: schedules.iter().position(|r| r == matches
+                    .name("startime")
+                    .unwrap()
+                    .as_str()).unwrap(),
+                size: i.value().attr("rowspan").unwrap().parse::<usize >().unwrap(),
+                dtstart: None,
+                dtend: None,
+            };
+
+            // Search for the day in the timetable
+            if let Some(existing_day) = timetable.iter_mut().find(|x| x.name == day) {
+                existing_day.courses.push(Some(course));
+            } else {
+                // Day with the name doesn't exist, create a new Day
+                timetable.push(models::Day {
+                    name: day.to_owned(),
+                    courses: vec![Some(course)],
+                });
+            }
+        });
+
+    if !check_consistency(&schedules, &timetable) {
+        panic!("Error when building the timetable.");
     }
 
-    todo!()
+    (schedules, (semester as usize, timetable))
 }
 
 /// Get timetable webpage
