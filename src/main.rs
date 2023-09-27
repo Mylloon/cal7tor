@@ -58,7 +58,7 @@ async fn main() {
     let timetable = timetable::timetable(level, args.semester, args.year, &user_agent).await;
 
     println!("Récupération des informations par rapport à l'année...");
-    let info = info::info(&user_agent).await;
+    let info = info::info(level, args.semester, args.year, &user_agent).await;
 
     if args.export.is_some() {
         // Export the calendar

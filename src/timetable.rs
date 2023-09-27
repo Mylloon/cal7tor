@@ -1,10 +1,10 @@
-use chrono::{Datelike, Duration, NaiveTime, TimeZone, Utc};
+use chrono::{Datelike, Duration, TimeZone, Utc};
 use regex::Regex;
-use scraper::{Html, Selector};
-use std::{collections::HashMap, str::FromStr};
+use scraper::Selector;
+use std::collections::HashMap;
 
 use crate::utils::{
-    self,
+    self, get_semester, get_webpage, get_year,
     models::{Position, TabChar},
 };
 
@@ -35,16 +35,21 @@ pub async fn timetable(
     // Find the timetable
     let raw_timetable = document.select(&sel_table).next().unwrap();
 
-    let mut hours = Vec::new();
+    let mut schedules = Vec::new();
     for hour in 8..=20 {
         for minute in &[0, 15, 30, 45] {
             let hour_str = format!("{}h{:02}", hour, minute);
-            hours.push(hour_str);
+            if let Some(last_hour) = schedules.pop() {
+                schedules.push(format!("{}-{}", last_hour, hour_str));
+            }
+            schedules.push(hour_str);
         }
+    }
+    for _ in 0..4 {
+        schedules.pop();
     }
 
     let mut timetable: Vec<models::Day> = Vec::new();
-    let mut schedules = Vec::new();
 
     raw_timetable
         .select(&sel_tbody)
@@ -94,8 +99,8 @@ pub async fn timetable(
                 .unwrap().name("location")
                 .unwrap()
                 .as_str().to_owned(),
-                start: hours.iter().position(|r| r == startime).unwrap(),
-                size: i.value().attr("rowspan").unwrap().parse::<usize >().unwrap(),
+                start: schedules.iter().position(|r| r.starts_with(startime)).unwrap(),
+                size: i.value().attr("rowspan").unwrap().parse::<usize>().unwrap(),
                 dtstart: None,
                 dtend: None,
             };
@@ -110,76 +115,9 @@ pub async fn timetable(
                     courses: vec![Some(course)],
                 });
             }
-
-
-            let duration = Regex::new(r"(?P<h>\d{1,2})h(?P<m>\d{1,2})?")
-            .unwrap()
-            .captures(matches
-                .name("duration")
-                .unwrap()
-                .as_str()).unwrap();
-            schedules.push(format!("{}-{}", startime, NaiveTime::from_str(&startime.replace('h', ":")).unwrap().overflowing_add_signed(Duration::minutes(duration.name("h").unwrap().as_str().parse::<i64>().unwrap() * 60 + match duration.name("m") {
-                Some(x) => x.as_str().parse::<i64>().unwrap(),
-                None => 0
-            })).0.format("%Hh%M")));
         });
 
-    if !check_consistency(&schedules, &timetable) {
-        panic!("Error when building the timetable.");
-    }
-
     (schedules, (semester as usize, timetable))
-}
-
-/// Get timetable webpage
-async fn get_webpage(
-    level: i8,
-    semester: i8,
-    year: &str,
-    user_agent: &str,
-) -> Result<Html, Box<dyn std::error::Error>> {
-    let url = format!("https://silice.informatique.univ-paris-diderot.fr/ufr/U{}/EDT/visualiserEmploiDuTemps.php?quoi=M{},{}", year, level, semester);
-
-    // Use custom User-Agent
-    let client = reqwest::Client::builder().user_agent(user_agent).build()?;
-    let html = client.get(&url).send().await?.text().await?;
-
-    // Panic on error
-    crate::utils::check_errors(&html, &url);
-
-    // Parse document
-    let document = Html::parse_document(&html);
-
-    Ok(document)
-}
-
-/// Check if the timetable is well built
-fn check_consistency(schedules: &[String], timetable: &Vec<models::Day>) -> bool {
-    let mut checker = true;
-    for day in timetable {
-        let mut i = 0;
-        for course in &day.courses {
-            match course {
-                Some(course_it) => {
-                    // Checks the consistency of course start times
-                    if i != course_it.start {
-                        checker = false;
-                        break;
-                    }
-                    // Keep the track of how many courses are in the day
-                    i += course_it.size
-                }
-                None => i += 1,
-            }
-        }
-        // The counter should be the same as the amount of possible hours of the day
-        if i != schedules.len() {
-            checker = false;
-            break;
-        }
-    }
-
-    checker
 }
 
 // Data builded in the timetable webpage
@@ -202,9 +140,7 @@ pub fn build(timetable: T, dates: D) -> Vec<models::Course> {
     let mut schedules = Vec::new();
     // h1 => heure de début | m1 => minute de début
     // h2 => heure de fin   | m2 => minute de fin
-    let re =
-        Regex::new(r"(?P<h1>\d{1,2})(h|:)(?P<m1>\d{1,2})?.(?P<h2>\d{1,2})(h|:)(?P<m2>\d{1,2})?")
-            .unwrap();
+    let re = Regex::new(r"(?P<h1>\d{1,2})h(?P<m1>\d{2})-(?P<h2>\d{1,2})h(?P<m2>\d{2})").unwrap();
     for hour in timetable.0 {
         let captures = re.captures(&hour).unwrap();
 
@@ -282,40 +218,6 @@ pub fn build(timetable: T, dates: D) -> Vec<models::Course> {
     }
 
     semester
-}
-
-/// Get the current semester depending on the current date
-fn get_semester(semester: Option<i8>) -> i8 {
-    match semester {
-        // Force the asked semester
-        Some(n) => n,
-        // Find the potential semester
-        None => {
-            if Utc::now().month() > 6 {
-                // From july to december
-                1
-            } else {
-                // from january to june
-                2
-            }
-        }
-    }
-}
-
-/// Get the current year depending on the current date
-fn get_year(year: Option<i32>, semester: i8) -> String {
-    let wanted_year = match year {
-        // Force the asked semester
-        Some(n) => n,
-        // Find the potential semester
-        None => Utc::now().year(),
-    };
-
-    if semester == 1 {
-        format!("{}-{}", wanted_year, wanted_year + 1)
-    } else {
-        format!("{}-{}", wanted_year - 1, wanted_year)
-    }
 }
 
 /// Display the timetable

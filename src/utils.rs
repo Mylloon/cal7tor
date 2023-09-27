@@ -1,3 +1,6 @@
+use chrono::{Datelike, Utc};
+use scraper::Html;
+
 pub mod models;
 
 /// Panic if an error happened
@@ -105,11 +108,58 @@ pub fn etc_str(text: &str) -> String {
     format!("{}...", split_half(text).0.trim())
 }
 
-// Capitalize string
-pub fn capitalize(text: &mut str) -> String {
-    if let Some(r) = text.get_mut(0..1) {
-        r.make_ascii_uppercase();
-    }
+/// Get timetable webpage
+pub async fn get_webpage(
+    level: i8,
+    semester: i8,
+    year: &str,
+    user_agent: &str,
+) -> Result<Html, Box<dyn std::error::Error>> {
+    let url = format!("https://silice.informatique.univ-paris-diderot.fr/ufr/U{}/EDT/visualiserEmploiDuTemps.php?quoi=M{},{}", year, level, semester);
 
-    text.to_string()
+    // Use custom User-Agent
+    let client = reqwest::Client::builder().user_agent(user_agent).build()?;
+    let html = client.get(&url).send().await?.text().await?;
+
+    // Panic on error
+    crate::utils::check_errors(&html, &url);
+
+    // Parse document
+    let document = Html::parse_document(&html);
+
+    Ok(document)
+}
+
+/// Get the current semester depending on the current date
+pub fn get_semester(semester: Option<i8>) -> i8 {
+    match semester {
+        // Force the asked semester
+        Some(n) => n,
+        // Find the potential semester
+        None => {
+            if Utc::now().month() > 6 {
+                // From july to december
+                1
+            } else {
+                // from january to june
+                2
+            }
+        }
+    }
+}
+
+/// Get the current year depending on the current date
+pub fn get_year(year: Option<i32>, semester: i8) -> String {
+    let wanted_year = match year {
+        // Force the asked semester
+        Some(n) => n,
+        // Find the potential semester
+        None => Utc::now().year(),
+    };
+
+    if semester == 1 {
+        format!("{}-{}", wanted_year, wanted_year + 1)
+    } else {
+        format!("{}-{}", wanted_year - 1, wanted_year)
+    }
 }
