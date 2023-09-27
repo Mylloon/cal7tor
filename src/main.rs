@@ -34,11 +34,10 @@ struct Args {
 async fn main() {
     let args = Args::parse();
 
-    let matches =
-        Regex::new(r"(?i)M(?P<level>[1,2])[-–•·]?(?P<pathway>(LP|IMPAIRS|DATA|GENIAL|MPRI))?")
-            .unwrap()
-            .captures(&args.class)
-            .unwrap();
+    let matches = Regex::new(r"(?i)M(?P<level>[1,2])")
+        .unwrap()
+        .captures(&args.class)
+        .unwrap();
 
     let level = matches
         .name("level")
@@ -46,15 +45,10 @@ async fn main() {
         .as_str()
         .parse::<i8>()
         .unwrap();
-    let pathway = matches.name("pathway").unwrap().as_str();
 
     let user_agent = format!("cal7tor/{}", env!("CARGO_PKG_VERSION"));
 
-    println!(
-        "Récupération de l'emploi du temps des M{}-{}...",
-        level,
-        pathway.to_uppercase()
-    );
+    println!("Récupération de l'emploi du temps des M{}...", level,);
     let timetable = timetable::timetable(level, args.semester, args.year, &user_agent).await;
 
     println!("Récupération des informations par rapport à l'année...");
