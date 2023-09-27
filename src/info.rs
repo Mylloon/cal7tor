@@ -1,76 +1,58 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use regex::{Captures, Regex};
-use scraper::{Html, Selector};
+use scraper::Selector;
 use std::collections::HashMap;
 
-pub async fn info(user_agent: &str) -> HashMap<usize, Vec<(DateTime<Utc>, i64)>> {
-    let document = get_webpage(user_agent)
+use crate::utils::{get_semester, get_webpage, get_year};
+
+pub async fn info(
+    level: i8,
+    semester_opt: Option<i8>,
+    year_opt: Option<i32>,
+    user_agent: &str,
+) -> HashMap<usize, Vec<(DateTime<Utc>, i64)>> {
+    let semester = get_semester(semester_opt);
+
+    let year = get_year(year_opt, semester);
+
+    let document = get_webpage(level, semester, &year, user_agent)
         .await
         .expect("Can't reach info website.");
 
     // Selectors
-    let sel_ul = Selector::parse("ul").unwrap();
-    let sel_li = Selector::parse("li").unwrap();
+    let sel_b = Selector::parse("b").unwrap();
+    let sel_font = Selector::parse("font").unwrap();
 
-    // Find the raw infos in html page
-    let mut raw_data = Vec::new();
-    for (i, data) in document.select(&sel_ul).enumerate() {
-        if [1, 2].contains(&i) {
-            raw_data.push(data);
-        }
-    }
+    // Find when is the back-to-school date
+    let raw_data = document
+        .select(&sel_b)
+        .find(|element| element.select(&sel_font).next().is_some())
+        .unwrap()
+        .inner_html();
 
-    let mut data = HashMap::new();
-    // d => date
-    // r => repetition
-    let re = Regex::new(r"(?P<d>\d{1,2} \w+ \d{4}).+(?P<r>\d)").unwrap();
-    for (i, ul) in raw_data.into_iter().enumerate() {
-        for element in ul.select(&sel_li) {
-            match element.inner_html() {
-                e if e.starts_with("Début") => {
-                    let captures = re.captures(&e).unwrap();
+    let re = Regex::new(r"\d{1,2} (septembre|octobre)").unwrap();
+    let date = re.captures(&raw_data).unwrap().get(0).unwrap().as_str();
 
-                    let start_date = get_date(captures.name("d").unwrap().as_str());
+    let weeks_s1_1 = 6; // Number of weeks in the first part of the first semester
+    let date_s1_1 = get_date(&format!("{} {}", date, year.split_once('-').unwrap().0)); // Get week of back-to-school
+    let weeks_s1_2 = 7; // Number of weeks in the second part of the first semester
+    let date_s1_2 = date_s1_1 + Duration::weeks(weeks_s1_1 + 1); // Add past weeks with the break-week
 
-                    let rep: i64 = captures.name("r").unwrap().as_str().parse().unwrap();
+    let weeks_s2_1 = 6; // Number of weeks in the first part of the second semester
+    let date_s2_1 = date_s1_2 + Duration::weeks(weeks_s1_2 + 4); // 4 weeks of vacation between semester
+    let weeks_s2_2 = 7; // Number of weeks in the second part of the second semester
+    let date_s2_2 = date_s2_1 + Duration::weeks(weeks_s2_1 + 1); // Add past weeks with the break-week
 
-                    data.insert(i + 1, vec![(start_date, rep)]);
-                }
-                e if e.starts_with("Reprise") => {
-                    let captures = re.captures(&e).unwrap();
-                    captures.name("g");
-
-                    let start_date = get_date(captures.name("d").unwrap().as_str());
-
-                    let rep: i64 = captures.name("r").unwrap().as_str().parse().unwrap();
-
-                    let it = i + 1;
-
-                    let mut vec = data.get(&it).unwrap().to_owned();
-                    vec.push((start_date, rep));
-
-                    data.insert(it, vec);
-                }
-                _ => (),
-            }
-        }
-    }
-
-    data
-}
-
-/// Get info webpage
-async fn get_webpage(user_agent: &str) -> Result<Html, Box<dyn std::error::Error>> {
-    let url = "https://informatique.up8.edu/licence-iv/edt";
-
-    // Use custom User-Agent
-    let client = reqwest::Client::builder().user_agent(user_agent).build()?;
-    let html = client.get(url).send().await?.text().await?;
-
-    // Panic on error
-    crate::utils::check_errors(&html, url);
-
-    Ok(Html::parse_document(&html))
+    HashMap::from([
+        (
+            1_usize,
+            vec![(date_s1_1, weeks_s1_1), (date_s1_2, weeks_s1_2)],
+        ),
+        (
+            2_usize,
+            vec![(date_s2_1, weeks_s2_1), (date_s2_2, weeks_s2_2)],
+        ),
+    ])
 }
 
 /// Turn a french date to an english one
