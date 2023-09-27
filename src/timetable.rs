@@ -89,11 +89,13 @@ pub async fn timetable(
                 .name("name")
                 .unwrap()
                 .as_str().to_owned(),
-                professor: match i.select(&sel_small).last().unwrap().inner_html() {
-                    i if i.starts_with("<span") => None,
-                    i => Some(i),
-                },
-                room: Regex::new(r"(<table.*<\/table>|<br>.*?<br>.*?)<br>(?P<location>.*?)<br>")
+                professor: if let Some(raw_prof) = i.select(&sel_small).last() {
+                    match raw_prof.inner_html() {
+                        i if i.starts_with("<span") => None,
+                        i => Some(i),
+                    }
+                } else { None },
+                room: Regex::new(r"(<table.*<\/table>|<br>.*?<br>.*?)?<br>(?P<location>.*?)<br>")
                 .unwrap()
                 .captures(&binding)
                 .unwrap().name("location")

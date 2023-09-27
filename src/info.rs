@@ -12,10 +12,10 @@ pub async fn info(
     user_agent: &str,
 ) -> HashMap<usize, Vec<(DateTime<Utc>, i64)>> {
     let semester = get_semester(semester_opt);
-
     let year = get_year(year_opt, semester);
 
-    let document = get_webpage(level, semester, &year, user_agent)
+    // Fetch the timetable of the FIRST semester
+    let document = get_webpage(level, 1, &year, user_agent)
         .await
         .expect("Can't reach info website.");
 
