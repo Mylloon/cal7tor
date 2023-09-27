@@ -47,5 +47,5 @@ impl TabChar {
 pub enum Position {
     Top,
     Middle,
-    Bottom
+    Bottom,
 }
