@@ -19,3 +19,4 @@ chrono = "0.4.28"
 ics = "0.5"
 uuid = { version = "1.4", features = ["v4", "fast-rng"] }
 clap = { version = "4.4", features = ["derive"] }
+dialoguer = "0.11"

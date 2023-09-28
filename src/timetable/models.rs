@@ -1,11 +1,11 @@
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Type {
     Cours,
     TP,
     TD,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Course {
     /// Type du cours
     pub typee: Type,
@@ -37,7 +37,7 @@ pub struct Course {
     pub dtend: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Day {
     /// Day's name
     pub name: String,

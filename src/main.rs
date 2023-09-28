@@ -1,6 +1,7 @@
 use clap::Parser;
 use regex::Regex;
 
+mod filter;
 mod ics;
 mod info;
 mod timetable;
@@ -49,7 +50,9 @@ async fn main() {
     let user_agent = format!("cal7tor/{}", env!("CARGO_PKG_VERSION"));
 
     println!("Récupération de l'emploi du temps des M{}...", level,);
-    let timetable = timetable::timetable(level, args.semester, args.year, &user_agent).await;
+    let mut timetable = timetable::timetable(level, args.semester, args.year, &user_agent).await;
+
+    timetable = filter::timetable(timetable);
 
     println!("Récupération des informations par rapport à l'année...");
     let info = info::info(level, args.semester, args.year, &user_agent).await;
