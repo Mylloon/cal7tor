@@ -179,3 +179,18 @@ impl Capitalize for str {
         string
     }
 }
+
+pub fn fill_hours(hours: &mut Vec<String>) {
+    for hour in 8..=20 {
+        for minute in &[0, 15, 30, 45] {
+            let hour_str = format!("{}h{:02}", hour, minute);
+            if let Some(last_hour) = hours.pop() {
+                hours.push(format!("{}-{}", last_hour, hour_str));
+            }
+            hours.push(hour_str);
+        }
+    }
+    for _ in 0..4 {
+        hours.pop();
+    }
+}

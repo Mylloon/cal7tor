@@ -4,7 +4,7 @@ use scraper::Selector;
 use std::collections::HashMap;
 
 use crate::utils::{
-    self, get_semester, get_webpage, get_year,
+    self, fill_hours, get_semester, get_webpage, get_year,
     models::{Position, TabChar},
     Capitalize,
 };
@@ -37,18 +37,7 @@ pub async fn timetable(
     let raw_timetable = document.select(&sel_table).next().unwrap();
 
     let mut schedules = Vec::new();
-    for hour in 8..=20 {
-        for minute in &[0, 15, 30, 45] {
-            let hour_str = format!("{}h{:02}", hour, minute);
-            if let Some(last_hour) = schedules.pop() {
-                schedules.push(format!("{}-{}", last_hour, hour_str));
-            }
-            schedules.push(hour_str);
-        }
-    }
-    for _ in 0..4 {
-        schedules.pop();
-    }
+    fill_hours(&mut schedules);
 
     let mut timetable: Vec<models::Day> = Vec::new();
 
