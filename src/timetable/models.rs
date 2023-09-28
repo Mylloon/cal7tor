@@ -37,10 +37,18 @@ pub struct Course {
     pub dtend: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Day {
     /// Day's name
     pub name: String,
     /// Ordered list of all the courses of the day
     pub courses: Vec<Option<Course>>,
 }
+
+// Data builded in the timetable webpage
+pub type Timetable = (
+    // Schedules
+    Vec<String>,
+    // Timetable per days with the semester as the key
+    (usize, Vec<Day>),
+);

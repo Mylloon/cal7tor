@@ -163,3 +163,19 @@ pub fn get_year(year: Option<i32>, semester: i8) -> String {
         format!("{}-{}", wanted_year - 1, wanted_year)
     }
 }
+
+pub trait Capitalize {
+    /// Capitalize string
+    fn capitalize(&self) -> String;
+}
+
+impl Capitalize for str {
+    fn capitalize(&self) -> String {
+        let mut string = self.to_owned();
+        if let Some(r) = string.get_mut(0..1) {
+            r.make_ascii_uppercase();
+        }
+
+        string
+    }
+}

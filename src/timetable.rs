@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use crate::utils::{
     self, get_semester, get_webpage, get_year,
     models::{Position, TabChar},
+    Capitalize,
 };
 
 pub mod models;
@@ -67,7 +68,8 @@ pub async fn timetable(
             let day = matches
                 .name("day")
                 .unwrap()
-                .as_str();
+                .as_str()
+                .capitalize();
 
             let startime = matches
             .name("startime")
@@ -122,13 +124,6 @@ pub async fn timetable(
     (schedules, (semester as usize, timetable))
 }
 
-// Data builded in the timetable webpage
-type T = (
-    // Schedules
-    Vec<String>,
-    // Timetable per days with the semester as the key
-    (usize, Vec<models::Day>),
-);
 // Data builded in the info webpage
 type D = HashMap<
     // Semester
@@ -138,7 +133,7 @@ type D = HashMap<
 >;
 
 /// Build the timetable
-pub fn build(timetable: T, dates: D) -> Vec<models::Course> {
+pub fn build(timetable: models::Timetable, dates: D) -> Vec<models::Course> {
     let mut schedules = Vec::new();
     // h1 => heure de début | m1 => minute de début
     // h2 => heure de fin   | m2 => minute de fin
