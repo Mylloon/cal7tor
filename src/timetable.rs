@@ -1,224 +1,118 @@
 use chrono::{Datelike, Duration, TimeZone, Utc};
 use regex::Regex;
-use scraper::{Html, Selector};
+use scraper::Selector;
 use std::collections::HashMap;
 
 use crate::utils::{
-    self, capitalize,
+    self, fill_hours, get_semester, get_webpage, get_year,
     models::{Position, TabChar},
+    Capitalize,
 };
 
 pub mod models;
 
 /// Fetch the timetable for a class
 pub async fn timetable(
-    year: i8,
+    level: i8,
     semester_opt: Option<i8>,
-    letter: Option<char>,
+    year_opt: Option<i32>,
     user_agent: &str,
 ) -> (Vec<String>, (usize, Vec<models::Day>)) {
-    let semester = get_semester(semester_opt, letter);
+    let semester = get_semester(semester_opt);
 
-    let document = get_webpage(year, semester, letter, user_agent)
+    let year = get_year(year_opt, semester);
+
+    let document = get_webpage(level, semester, &year, user_agent)
         .await
         .expect("Can't reach timetable website.");
 
     // Selectors
     let sel_table = Selector::parse("table").unwrap();
-    let sel_tr = Selector::parse("tr").unwrap();
     let sel_tbody = Selector::parse("tbody").unwrap();
-    let sel_th = Selector::parse("th").unwrap();
     let sel_td = Selector::parse("td").unwrap();
-    let sel_em = Selector::parse("em").unwrap();
     let sel_small = Selector::parse("small").unwrap();
-    let sel_strong = Selector::parse("strong").unwrap();
+    let sel_b = Selector::parse("b").unwrap();
 
     // Find the timetable
     let raw_timetable = document.select(&sel_table).next().unwrap();
 
-    // Find the slots available for the timetable
-    let raw_schedules = raw_timetable.select(&sel_tr).next().unwrap();
-
-    // Find availables schedules
     let mut schedules = Vec::new();
-    for time in raw_schedules.select(&sel_th) {
-        schedules.push(time.inner_html());
-    }
+    fill_hours(&mut schedules);
 
-    // Find the timetable values
-    let raw_timetable_values = raw_timetable.select(&sel_tbody).next().unwrap();
+    let mut timetable: Vec<models::Day> = Vec::new();
 
-    // For each days
-    let mut timetable = Vec::new();
-    let span_regex = Regex::new(r"<span.*</span>").unwrap();
-    for day in raw_timetable_values.select(&sel_tr) {
-        let mut courses_vec = Vec::new();
-        let mut location_tracker = 0;
-        for course in day.select(&sel_td) {
-            if course.inner_html() == "—" {
-                courses_vec.push(None);
-                location_tracker += 1;
+    raw_timetable
+        .select(&sel_tbody)
+        .next()
+        .unwrap()
+        .select(&sel_td)
+        .filter(|element| element.value().attr("title").is_some())
+        .for_each(|i| {
+            let matches =
+                Regex::new(r"(?P<type>COURS|TD|TP) (?P<name>.*) : (?P<day>(lundi|mardi|mercredi|jeudi|vendredi)) (?P<startime>.*) \(durée : (?P<duration>.*)\)")
+                    .unwrap()
+                    .captures(i.value().attr("title").unwrap())
+                    .unwrap();
+
+            let day = matches
+                .name("day")
+                .unwrap()
+                .as_str()
+                .capitalize();
+
+            let startime = matches
+            .name("startime")
+            .unwrap()
+            .as_str();
+
+            let binding = i.select(&sel_b).last().unwrap().inner_html();
+            let course = models::Course{
+                typee: match matches
+                .name("type")
+                .unwrap()
+                .as_str() {
+                    "COURS" => models::Type::Cours,
+                    "TP" => models::Type::TP,
+                    "TD" => models::Type::TD,
+                    _ => panic!("Unknown type of course")
+                },
+                name: matches
+                .name("name")
+                .unwrap()
+                .as_str().to_owned(),
+                professor: if let Some(raw_prof) = i.select(&sel_small).last() {
+                    match raw_prof.inner_html() {
+                        i if i.starts_with("<span") => None,
+                        i => Some(i),
+                    }
+                } else { None },
+                room: Regex::new(r"(<table.*<\/table>|<br>.*?<br>.*?)?<br>(?P<location>.*?)<br>")
+                .unwrap()
+                .captures(&binding)
+                .unwrap().name("location")
+                .unwrap()
+                .as_str().to_owned(),
+                start: schedules.iter().position(|r| r.starts_with(startime)).unwrap(),
+                size: i.value().attr("rowspan").unwrap().parse::<usize>().unwrap(),
+                dtstart: None,
+                dtend: None,
+            };
+
+            // Search for the day in the timetable
+            if let Some(existing_day) = timetable.iter_mut().find(|x| x.name == day) {
+                existing_day.courses.push(Some(course));
             } else {
-                courses_vec.push(Some(models::Course {
-                    name: match course.select(&sel_em).next() {
-                        Some(value) => span_regex.replace(&value.inner_html(), " ").to_string(),
-                        None => span_regex
-                            .replace(course.inner_html().split("<br>").next().unwrap(), " ")
-                            .to_string(),
-                    },
-                    professor: match course
-                        .select(&sel_small)
-                        .next()
-                        .unwrap()
-                        .inner_html()
-                        .split("<br>")
-                        .next()
-                    {
-                        Some(data) => {
-                            if data.contains("</strong>") {
-                                // This is the room, so there is no professor assigned
-                                // to this courses yet
-                                None
-                            } else {
-                                Some(data.to_string())
-                            }
-                        }
-                        None => None,
-                    },
-                    room: capitalize(&mut match course.select(&sel_strong).next() {
-                        Some(el) => el.inner_html().replace("<br>", ""),
-                        // Error in the site, silently passing... (the room is probably at the professor member)
-                        None => String::new(),
-                    }),
-                    start: location_tracker,
-                    size: match course.value().attr("colspan") {
-                        Some(i) => i.parse().unwrap(),
-                        None => 1,
-                    },
-                    dtstart: None,
-                    dtend: None,
-                }));
-
-                match &courses_vec[courses_vec.len() - 1] {
-                    Some(course) => location_tracker += course.size,
-                    None => location_tracker += 1,
-                }
+                // Day with the name doesn't exist, create a new Day
+                timetable.push(models::Day {
+                    name: day.to_owned(),
+                    courses: vec![Some(course)],
+                });
             }
-        }
-
-        timetable.push(models::Day {
-            name: day.select(&sel_th).next().unwrap().inner_html(),
-            courses: courses_vec,
-        })
-    }
-
-    if !check_consistency(&schedules, &timetable) {
-        panic!("Error when building the timetable.");
-    }
+        });
 
     (schedules, (semester as usize, timetable))
 }
 
-/// Get timetable webpage
-async fn get_webpage(
-    year: i8,
-    semester: i8,
-    letter: Option<char>,
-    user_agent: &str,
-) -> Result<Html, Box<dyn std::error::Error>> {
-    let url = {
-        let panic_semester_message = "Unknown semester.";
-        let panic_letter_message = "Unknown letter.";
-
-        let base_url = "https://informatique.up8.edu/licence-iv/edt";
-        let allow_letters_1 = match semester {
-            1 => ['a', 'b', 'c'],
-            2 => ['x', 'y', 'z'],
-            _ => panic!("{}", panic_semester_message),
-        };
-        let allow_letters_2_3 = match semester {
-            1 => ['a', 'b'],
-            2 => ['x', 'y'],
-            _ => panic!("{}", panic_semester_message),
-        };
-        match year {
-            1 => {
-                let c = letter.expect(panic_letter_message).to_ascii_lowercase();
-                if allow_letters_1.contains(&c) {
-                    format!("{}/l1-{}.html", base_url, c)
-                } else {
-                    panic!("{}", panic_letter_message)
-                }
-            }
-            2 => {
-                let c = letter.expect(panic_letter_message).to_ascii_lowercase();
-                if allow_letters_2_3.contains(&c) {
-                    format!("{}/l2-{}.html", base_url, c)
-                } else {
-                    panic!("{}", panic_letter_message)
-                }
-            }
-            3 => {
-                let c = letter.expect(panic_letter_message).to_ascii_lowercase();
-                if allow_letters_2_3.contains(&c) {
-                    format!("{}/l3-{}.html", base_url, c)
-                } else {
-                    panic!("{}", panic_letter_message)
-                }
-            }
-            _ => panic!("Unknown year."),
-        }
-    };
-
-    // Use custom User-Agent
-    let client = reqwest::Client::builder().user_agent(user_agent).build()?;
-    let html = client.get(&url).send().await?.text().await?;
-
-    // Panic on error
-    crate::utils::check_errors(&html, &url);
-
-    // Parse document
-    let document = Html::parse_document(&html);
-
-    Ok(document)
-}
-
-/// Check if the timetable is well built
-fn check_consistency(schedules: &[String], timetable: &Vec<models::Day>) -> bool {
-    let mut checker = true;
-    for day in timetable {
-        let mut i = 0;
-        for course in &day.courses {
-            match course {
-                Some(course_it) => {
-                    // Checks the consistency of course start times
-                    if i != course_it.start {
-                        checker = false;
-                        break;
-                    }
-                    // Keep the track of how many courses are in the day
-                    i += course_it.size
-                }
-                None => i += 1,
-            }
-        }
-        // The counter should be the same as the amount of possible hours of the day
-        if i != schedules.len() {
-            checker = false;
-            break;
-        }
-    }
-
-    checker
-}
-
-// Data builded in the timetable webpage
-type T = (
-    // Schedules
-    Vec<String>,
-    // Timetable per days with the semester as the key
-    (usize, Vec<models::Day>),
-);
 // Data builded in the info webpage
 type D = HashMap<
     // Semester
@@ -228,13 +122,11 @@ type D = HashMap<
 >;
 
 /// Build the timetable
-pub fn build(timetable: T, dates: D) -> Vec<models::Course> {
+pub fn build(timetable: models::Timetable, dates: D) -> Vec<models::Course> {
     let mut schedules = Vec::new();
     // h1 => heure de début | m1 => minute de début
     // h2 => heure de fin   | m2 => minute de fin
-    let re =
-        Regex::new(r"(?P<h1>\d{1,2})(h|:)(?P<m1>\d{1,2})?.(?P<h2>\d{1,2})(h|:)(?P<m2>\d{1,2})?")
-            .unwrap();
+    let re = Regex::new(r"(?P<h1>\d{1,2})h(?P<m1>\d{2})-(?P<h2>\d{1,2})h(?P<m2>\d{2})").unwrap();
     for hour in timetable.0 {
         let captures = re.captures(&hour).unwrap();
 
@@ -312,37 +204,6 @@ pub fn build(timetable: T, dates: D) -> Vec<models::Course> {
     }
 
     semester
-}
-
-/// Get the current semester depending on the letter or the current date
-fn get_semester(semester: Option<i8>, letter: Option<char>) -> i8 {
-    match semester {
-        // Force the asked semester
-        Some(n) => n,
-        // Find the potential semester
-        None => match letter {
-            // Based on letter (kinda accurate)
-            Some(c) => {
-                if c.to_ascii_uppercase() as i8 > 77 {
-                    // If letter is N or after
-                    2
-                } else {
-                    // If letter is before N
-                    1
-                }
-            }
-            // Based on the time (kinda less accurate)
-            None => {
-                if Utc::now().month() > 6 {
-                    // From july to december
-                    1
-                } else {
-                    // from january to june
-                    2
-                }
-            }
-        },
-    }
 }
 
 /// Display the timetable

@@ -1,5 +1,15 @@
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
+pub enum Type {
+    Cours,
+    TP,
+    TD,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct Course {
+    /// Type du cours
+    pub typee: Type,
+
     /// Course's name
     pub name: String,
 
@@ -27,9 +37,18 @@ pub struct Course {
     pub dtend: Option<chrono::DateTime<chrono::Utc>>,
 }
 
+#[derive(Debug)]
 pub struct Day {
     /// Day's name
     pub name: String,
     /// Ordered list of all the courses of the day
     pub courses: Vec<Option<Course>>,
 }
+
+// Data builded in the timetable webpage
+pub type Timetable = (
+    // Schedules
+    Vec<String>,
+    // Timetable per days with the semester as the key
+    (usize, Vec<Day>),
+);

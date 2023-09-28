@@ -1,8 +1,6 @@
 # cal7tor • *cal*endar P*7* extrac*tor*
 
-> !! Fork de [cal8tor](https://git.mylloon.fr/Anri/cal8tor) !!
->
-> !! En cours de dev -> ne fonctionne pas !!
+> Fork de [cal8tor](https://git.mylloon.fr/Anri/cal8tor)
 
 Extracteur d'emploi du temps pour les masters d'informatique de Paris Cité (Diderot)
 
@@ -22,23 +20,25 @@ Pour afficher la page d'aide
 $ cal7tor --help
 ```
 
-## Voir le calendrier dans le terminal
+<!-- ## Voir le calendrier dans le terminal
 
-Pour les LP par exemple, lance :
+> Cette partie est héritée de cal8tor et n'est actuellement pas compatible avec cal7tor.
+
+Pour les M1 par exemple, lance :
 
 ```bash
-$ cal7tor lp
+$ cal7tor M1
 ```
 
 > Le rendu peut parfois être difficile à lire, n'hésites pas à utiliser l'option
-> `-c` (ou `--cl`) pour ajuster la longueur des cellules du planning.
+> `-c` (ou `--cl`) pour ajuster la longueur des cellules du planning. -->
 
 ## Exporter le calendrier au format `.ics`
 
-Pour les LP par exemple, lance :
+Pour les M1 par exemple, lance :
 
 ```bash
-$ cal8tor LP --export calendar.ics
+$ cal8tor M1 --export calendar.ics
 ```
 
 > Le fichier comprend le fuseau horaire pour `Europe/Paris` et est

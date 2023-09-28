@@ -1,6 +1,7 @@
 use clap::Parser;
 use regex::Regex;
 
+mod filter;
 mod ics;
 mod info;
 mod timetable;
@@ -9,13 +10,17 @@ mod utils;
 #[derive(Parser)]
 #[clap(version, about, long_about = None)]
 struct Args {
-    /// The class you want to get the timetable, i.e.: L2-A
+    /// The class you want to get the timetable, i.e.: M1-LP
     #[clap(value_parser)]
     class: String,
 
-    /// The semester you want (useful only in 3rd year, 1-2 use letter in class)
+    /// The semester you want (1 or 2)
     #[clap(short, long, value_parser, value_name = "SEMESTER NUMBER")]
     semester: Option<i8>,
+
+    /// The year, default to the current year
+    #[clap(short, long, value_parser, value_name = "YEAR")]
+    year: Option<i32>,
 
     /// Export to iCalendar format (.ics)
     #[clap(short, long, value_name = "FILE NAME")]
@@ -30,39 +35,27 @@ struct Args {
 async fn main() {
     let args = Args::parse();
 
-    let matches = Regex::new(r"[Ll](?P<year>\d)[-–•·]?(?P<letter>.)?")
+    let matches = Regex::new(r"(?i)M(?P<level>[1,2])")
         .unwrap()
         .captures(&args.class)
         .unwrap();
 
-    let year = matches
-        .name("year")
+    let level = matches
+        .name("level")
         .unwrap()
         .as_str()
         .parse::<i8>()
         .unwrap();
-    let letter = matches
-        .name("letter")
-        .map(|c| c.as_str().chars().next().expect("Error in letter"));
 
-    // Show a separator only if we need one
-    let seperator = match letter {
-        Some(_) => "-",
-        None => "",
-    };
+    let user_agent = format!("cal7tor/{}", env!("CARGO_PKG_VERSION"));
 
-    let user_agent = format!("cal8tor/{}", env!("CARGO_PKG_VERSION"));
+    println!("Récupération de l'emploi du temps des M{}...", level,);
+    let mut timetable = timetable::timetable(level, args.semester, args.year, &user_agent).await;
 
-    println!(
-        "Récupération de l'emploi du temps des L{}{}{}...",
-        year,
-        seperator,
-        letter.unwrap_or_default().to_uppercase()
-    );
-    let timetable = timetable::timetable(year, args.semester, letter, &user_agent).await;
+    timetable = filter::timetable(timetable);
 
     println!("Récupération des informations par rapport à l'année...");
-    let info = info::info(&user_agent).await;
+    let info = info::info(level, args.semester, args.year, &user_agent).await;
 
     if args.export.is_some() {
         // Export the calendar
@@ -73,6 +66,7 @@ async fn main() {
 
         println!("Fichier .ICS construit et exporté => {}", filename);
     } else {
+        println!("\x1b[93mNOTICE: IT WON'T WORK!!!\x1b[0m");
         // Show the calendar
         println!("Affichage...");
         timetable::display(timetable, args.cl);
