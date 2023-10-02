@@ -53,11 +53,11 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
         event.push(Location::new(course.room));
 
         // Course's name
-        let mut course_name = Summary::new(course.name);
+        let mut course_name = Summary::new(format!("{} - {}", course.category, course.name));
         course_name.append(parameters!("LANGUAGE" => "fr"));
         event.push(course_name);
 
-        // Course's type
+        // Course's category
         event.push(Categories::new(course.category.to_string()));
 
         // Add the course to the calendar
