@@ -67,13 +67,13 @@ pub async fn timetable(
 
             let binding = i.select(&sel_b).last().unwrap().inner_html();
             let course = models::Course{
-                typee: match matches
+                category: match matches
                 .name("type")
                 .unwrap()
                 .as_str() {
-                    "COURS" => models::Type::Cours,
-                    "TP" => models::Type::TP,
-                    "TD" => models::Type::TD,
+                    "COURS" => models::Category::Cours,
+                    "TP" => models::Category::TP,
+                    "TD" => models::Category::TD,
                     _ => panic!("Unknown type of course")
                 },
                 name: matches

@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use dialoguer::MultiSelect;
 
+use crate::timetable::models::Category;
 use crate::timetable::models::Course;
 use crate::timetable::models::Timetable;
-use crate::timetable::models::Type;
 use crate::utils::fill_hours;
 
 const DISCLAIMER: &str = "(selection avec ESPACE, ENTRER pour valider)";
@@ -59,7 +59,7 @@ fn courses(timetable: &mut Timetable) {
 /// Filter the multiples TD/TP
 fn tdtp(timetable: &mut Timetable) {
     // Entry's name used for finding duplicates
-    let get_entry = |course: &Course| format!("{} - {:?}", course.name, course.typee);
+    let get_entry = |course: &Course| format!("{} - {:?}", course.name, course.category);
 
     let mut hours = vec![];
     fill_hours(&mut hours);
@@ -86,8 +86,8 @@ fn tdtp(timetable: &mut Timetable) {
     timetable.1 .1.iter().for_each(|day| {
         day.courses.iter().for_each(|course_opt| {
             if let Some(course) = course_opt {
-                match course.typee {
-                    Type::TD | Type::TP => {
+                match course.category {
+                    Category::TD | Category::TP => {
                         td_or_tp.push((course, day.name.to_owned()));
                         let count = counts.entry(get_entry(course)).or_insert(0);
                         *count += 1;
@@ -104,7 +104,7 @@ fn tdtp(timetable: &mut Timetable) {
     let mut multiselected: Vec<String> = td_or_tp.iter().map(|el| get_selection(el)).collect();
     multiselected.sort();
 
-    let defaults = vec![true; multiselected.len()];
+    let defaults = vec![false; multiselected.len()];
     let selections = MultiSelect::new()
         .with_prompt(format!("Choisis tes horaires de TD/TP {}", DISCLAIMER))
         .items(&multiselected[..])
@@ -117,7 +117,7 @@ fn tdtp(timetable: &mut Timetable) {
         day.courses.retain(|course_opt| {
             if let Some(course) = course_opt {
                 // Keep if it's a course
-                if course.typee == Type::Cours {
+                if course.category == Category::Cours {
                     return true;
                 }
 

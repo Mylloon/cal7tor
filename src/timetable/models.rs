@@ -1,14 +1,20 @@
 #[derive(Clone, Debug, PartialEq)]
-pub enum Type {
+pub enum Category {
     Cours,
     TP,
     TD,
 }
 
+impl std::fmt::Display for Category {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        std::fmt::Debug::fmt(self, f)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Course {
     /// Type du cours
-    pub typee: Type,
+    pub category: Category,
 
     /// Course's name
     pub name: String,

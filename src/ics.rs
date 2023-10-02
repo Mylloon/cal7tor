@@ -1,7 +1,7 @@
 use chrono::TimeZone;
 use ics::{
     parameters,
-    properties::{Class, Description, DtEnd, DtStart, Location, Summary, Transp},
+    properties::{Categories, Class, Description, DtEnd, DtStart, Location, Summary, Transp},
     Event, ICalendar, Standard,
 };
 
@@ -56,6 +56,9 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
         let mut course_name = Summary::new(course.name);
         course_name.append(parameters!("LANGUAGE" => "fr"));
         event.push(course_name);
+
+        // Course's type
+        event.push(Categories::new(course.category.to_string()));
 
         // Add the course to the calendar
         calendar.add_event(event);
