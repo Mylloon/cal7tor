@@ -38,7 +38,7 @@ $ cal7tor M1
 Pour les M1 par exemple, lance :
 
 ```bash
-$ cal8tor M1 --export calendar.ics
+$ cal7tor M1 --export calendar.ics
 ```
 
 > Le fichier comprend le fuseau horaire pour `Europe/Paris` et est
