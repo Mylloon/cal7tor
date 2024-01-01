@@ -12,11 +12,11 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 reqwest = { version = "0.11" }
-tokio = { version = "1.32", features = ["full"] }
-scraper = "0.17"
-regex = "1.9"
-chrono = "0.4.28"
+tokio = { version = "1.35", features = ["full"] }
+scraper = "0.18"
+regex = "1.10"
+chrono = "0.4.31"
 ics = "0.5"
-uuid = { version = "1.4", features = ["v4", "fast-rng"] }
+uuid = { version = "1.6", features = ["v4", "fast-rng"] }
 clap = { version = "4.4", features = ["derive"] }
 dialoguer = "0.11"
