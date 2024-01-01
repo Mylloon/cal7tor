@@ -160,7 +160,7 @@ checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 
 [[package]]
 name = "cal7tor"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "clap",
