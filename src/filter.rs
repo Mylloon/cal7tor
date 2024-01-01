@@ -12,6 +12,13 @@ const DISCLAIMER: &str = "(selection avec ESPACE, ENTRER pour valider)";
 pub fn timetable(timetable: Timetable) -> Timetable {
     let mut my_timetable = timetable;
 
+    /* Note on Cours/TD:
+     * We use the "as long as x interests us, we accept" approach.
+     *
+     * Because when a course and its TD are on the same slot,
+     * it's probably because there's an alternation between course
+     * and TD and no other choice is possible. */
+
     choice(&mut my_timetable);
     courses(&mut my_timetable);
     tdtp(&mut my_timetable);
@@ -84,7 +91,9 @@ fn courses(timetable: &mut Timetable) {
         day.courses.retain(|course_opt| {
             if let Some(course) = course_opt {
                 // Keep if it's a TD/TP
-                if course.category == Category::TD || course.category == Category::TP {
+                if course.category.contains(&Category::TD)
+                    || course.category.contains(&Category::TP)
+                {
                     return true;
                 }
 
@@ -134,7 +143,7 @@ fn tdtp(timetable: &mut Timetable) {
         day.courses.retain(|course_opt| {
             if let Some(course) = course_opt {
                 // Keep if it's a course
-                if course.category == Category::Cours {
+                if course.category.contains(&Category::Cours) {
                     return true;
                 }
 

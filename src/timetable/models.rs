@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Category {
     Cours,
@@ -14,7 +16,7 @@ impl std::fmt::Display for Category {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Course {
     /// Type du cours
-    pub category: Category,
+    pub category: Arc<[Category]>,
 
     /// Course's name
     pub name: String,

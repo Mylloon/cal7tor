@@ -49,7 +49,7 @@ pub async fn timetable(
         .filter(|element| element.value().attr("title").is_some())
         .for_each(|i| {
             let matches =
-                Regex::new(r"(?P<type>COURS|TD|TP) (?P<name>.*) : (?P<day>(lundi|mardi|mercredi|jeudi|vendredi)) (?P<startime>.*) \(durée : (?P<duration>.*)\)")
+                Regex::new(r"(?P<type>COURS|TD|TP|COURS_TD) (?P<name>.*) : (?P<day>(lundi|mardi|mercredi|jeudi|vendredi)) (?P<startime>.*) \(durée : (?P<duration>.*)\)")
                     .unwrap()
                     .captures(i.value().attr("title").unwrap())
                     .unwrap();
@@ -71,9 +71,10 @@ pub async fn timetable(
                 .name("type")
                 .unwrap()
                 .as_str() {
-                    "COURS" => models::Category::Cours,
-                    "TP" => models::Category::TP,
-                    "TD" => models::Category::TD,
+                    "COURS" => [models::Category::Cours].into(),
+                    "TP" => [models::Category::TP].into(),
+                    "TD" => [models::Category::TD].into(),
+                    "COURS_TD" => [models::Category::Cours, models::Category::TD].into(),
                     _ => panic!("Unknown type of course")
                 },
                 name: matches

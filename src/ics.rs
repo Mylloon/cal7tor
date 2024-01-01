@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use chrono::TimeZone;
 use ics::{
     parameters,
@@ -52,13 +54,20 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
         // Room location
         event.push(Location::new(course.room));
 
+        let categories = course
+            .category
+            .iter()
+            .map(|c| c.to_string())
+            .collect::<Arc<[String]>>()
+            .join("/");
+
         // Course's name
-        let mut course_name = Summary::new(format!("{} - {}", course.category, course.name));
+        let mut course_name = Summary::new(format!("{} - {}", categories, course.name));
         course_name.append(parameters!("LANGUAGE" => "fr"));
         event.push(course_name);
 
         // Course's category
-        event.push(Categories::new(course.category.to_string()));
+        event.push(Categories::new(categories));
 
         // Add the course to the calendar
         calendar.add_event(event);

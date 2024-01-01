@@ -232,7 +232,11 @@ pub fn get_count<'a>(
     timetable.1 .1.iter().for_each(|day| {
         day.courses.iter().for_each(|course_opt| {
             if let Some(course) = course_opt {
-                if allowed_list.contains(&course.category) {
+                if course
+                    .category
+                    .iter()
+                    .any(|category| allowed_list.contains(category))
+                {
                     courses.push((course, day.name.to_owned()));
                     let count = counts.entry(get_entry(course)).or_insert(0);
                     *count += 1;
