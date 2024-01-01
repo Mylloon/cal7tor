@@ -1,5 +1,9 @@
+use std::collections::HashMap;
+
 use chrono::{Datelike, Utc};
 use scraper::Html;
+
+use crate::timetable::models::{Category, Course, Timetable};
 
 pub mod models;
 
@@ -193,4 +197,49 @@ pub fn fill_hours(hours: &mut Vec<String>) {
     for _ in 0..4 {
         hours.pop();
     }
+}
+
+/// Names showed to the users
+pub fn get_selection(data: &(&Course, String)) -> String {
+    let mut hours = vec![];
+    fill_hours(&mut hours);
+
+    format!(
+        "{} - {} {}-{}",
+        data.0.name,
+        data.1,
+        hours[data.0.start].split_once('-').unwrap().0,
+        hours[data.0.start + data.0.size - 1]
+            .split_once('-')
+            .unwrap()
+            .1
+    )
+}
+
+/// Entry's name used for finding duplicates
+pub fn get_entry(course: &Course) -> String {
+    format!("{} - {:?}", course.name, course.category)
+}
+
+pub fn get_count<'a>(
+    timetable: &'a mut Timetable,
+    allowed_list: &'a [Category],
+) -> (Vec<(&'a Course, String)>, HashMap<String, i32>) {
+    // List of courses who will be courses
+    let mut courses = vec![];
+
+    let mut counts = HashMap::new();
+    timetable.1 .1.iter().for_each(|day| {
+        day.courses.iter().for_each(|course_opt| {
+            if let Some(course) = course_opt {
+                if allowed_list.contains(&course.category) {
+                    courses.push((course, day.name.to_owned()));
+                    let count = counts.entry(get_entry(course)).or_insert(0);
+                    *count += 1;
+                }
+            }
+        })
+    });
+
+    (courses, counts)
 }
