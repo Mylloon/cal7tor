@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use chrono::{Datelike, Utc};
 use scraper::Html;
@@ -184,7 +184,8 @@ impl Capitalize for str {
     }
 }
 
-pub fn fill_hours(hours: &mut Vec<String>) {
+pub fn get_hours() -> Arc<[String]> {
+    let mut hours = vec![];
     for hour in 8..=20 {
         for minute in &[0, 15, 30, 45] {
             let hour_str = format!("{}h{:02}", hour, minute);
@@ -197,12 +198,13 @@ pub fn fill_hours(hours: &mut Vec<String>) {
     for _ in 0..4 {
         hours.pop();
     }
+
+    hours.into()
 }
 
 /// Names showed to the users
 pub fn get_selection(data: &(&Course, String)) -> String {
-    let mut hours = vec![];
-    fill_hours(&mut hours);
+    let hours = get_hours();
 
     format!(
         "{} - {} {}-{}",

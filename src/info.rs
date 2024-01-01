@@ -1,7 +1,7 @@
 use chrono::{DateTime, Duration, Utc};
 use regex::{Captures, Regex};
 use scraper::Selector;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::utils::{get_semester, get_webpage, get_year};
 
@@ -75,7 +75,7 @@ fn anglophonization(date: &str) -> String {
     // New regex of all the french month
     let re = Regex::new(&format!(
         "({})",
-        dico.keys().cloned().collect::<Vec<_>>().join("|")
+        dico.keys().cloned().collect::<Arc<[_]>>().join("|")
     ))
     .unwrap();
 

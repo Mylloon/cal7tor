@@ -1,10 +1,10 @@
 use chrono::{Datelike, Duration, TimeZone, Utc};
 use regex::Regex;
 use scraper::Selector;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::utils::{
-    self, fill_hours, get_semester, get_webpage, get_year,
+    self, get_hours, get_semester, get_webpage, get_year,
     models::{Position, TabChar},
     Capitalize,
 };
@@ -17,7 +17,7 @@ pub async fn timetable(
     semester_opt: Option<i8>,
     year_opt: Option<i32>,
     user_agent: &str,
-) -> (Vec<String>, (usize, Vec<models::Day>)) {
+) -> models::Timetable {
     let semester = get_semester(semester_opt);
 
     let year = get_year(year_opt, semester);
@@ -36,8 +36,7 @@ pub async fn timetable(
     // Find the timetable
     let raw_timetable = document.select(&sel_table).next().unwrap();
 
-    let mut schedules = Vec::new();
-    fill_hours(&mut schedules);
+    let schedules = get_hours();
 
     let mut timetable: Vec<models::Day> = Vec::new();
 
@@ -136,8 +135,8 @@ pub fn build(timetable: models::Timetable, dates: D) -> Vec<models::Course> {
     // h1 => heure de début | m1 => minute de début
     // h2 => heure de fin   | m2 => minute de fin
     let re = Regex::new(r"(?P<h1>\d{1,2})h(?P<m1>\d{2})-(?P<h2>\d{1,2})h(?P<m2>\d{2})").unwrap();
-    for hour in timetable.0 {
-        let captures = re.captures(&hour).unwrap();
+    for hour in timetable.0.iter() {
+        let captures = re.captures(hour).unwrap();
 
         let h1 = match captures.name("h1") {
             Some(h) => h.as_str().parse().unwrap(),
@@ -216,7 +215,7 @@ pub fn build(timetable: models::Timetable, dates: D) -> Vec<models::Course> {
 }
 
 /// Display the timetable
-pub fn display(timetable: (Vec<String>, (usize, Vec<models::Day>)), cell_length: usize) {
+pub fn display(timetable: (Arc<[String]>, (usize, Vec<models::Day>)), cell_length: usize) {
     // Cell length for hours
     let clh = 11;
     // Cell number
@@ -242,7 +241,7 @@ pub fn display(timetable: (Vec<String>, (usize, Vec<models::Day>)), cell_length:
     // Store the data of the course for utils::line_table
     let mut next_skip = HashMap::new();
     // For each hours -- i the hour's number
-    for (i, hour) in timetable.0.into_iter().enumerate() {
+    for (i, hour) in timetable.0.iter().enumerate() {
         // Draw separator line
         utils::line_table(clh, cell_length, cn, Position::Middle, next_skip);
 

@@ -56,7 +56,7 @@ pub struct Day {
 // Data builded in the timetable webpage
 pub type Timetable = (
     // Schedules
-    Vec<String>,
+    Arc<[String]>,
     // Timetable per days with the semester as the key
     (usize, Vec<Day>),
 );
