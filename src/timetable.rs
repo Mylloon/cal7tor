@@ -110,6 +110,14 @@ pub async fn timetable(
             }
         });
 
+    // Sort by days
+    let day_positions = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"]
+        .iter()
+        .enumerate()
+        .map(|(i, &day)| (day.to_owned(), i))
+        .collect::<HashMap<String, usize>>();
+    timetable.sort_by(|a, b| day_positions[&a.name].cmp(&day_positions[&b.name]));
+
     (schedules, (semester as usize, timetable))
 }
 
