@@ -13,6 +13,7 @@ const DISCLAIMER: &str = "(selection avec ESPACE, ENTRER pour valider)";
 pub fn timetable(timetable: Timetable) -> Timetable {
     let mut my_timetable = timetable;
 
+    choice(&mut my_timetable);
     courses(&mut my_timetable);
     tdtp(&mut my_timetable);
 
@@ -20,7 +21,7 @@ pub fn timetable(timetable: Timetable) -> Timetable {
 }
 
 /// Exclude some courses
-fn courses(timetable: &mut Timetable) {
+fn choice(timetable: &mut Timetable) {
     let mut multiselected = vec![];
     timetable.1 .1.iter().for_each(|day| {
         day.courses.iter().for_each(|course_opt| {
@@ -46,6 +47,89 @@ fn courses(timetable: &mut Timetable) {
                 // Remove courses not followed
                 for i in &selections {
                     if course.name == multiselected[*i] {
+                        return true;
+                    }
+                }
+            }
+
+            false
+        });
+    }
+}
+
+/// Filter the multiple courses
+fn courses(timetable: &mut Timetable) {
+    // Entry's name used for finding duplicates
+    let get_entry = |course: &Course| format!("{} - {:?}", course.name, course.category);
+
+    let mut hours = vec![];
+    fill_hours(&mut hours);
+
+    // Names showed to the users
+    let get_selection = |data: &(&Course, String)| {
+        format!(
+            "{} - {} {}-{}",
+            data.0.name,
+            data.1,
+            hours[data.0.start].split_once('-').unwrap().0,
+            hours[data.0.start + data.0.size - 1]
+                .split_once('-')
+                .unwrap()
+                .1
+        )
+    };
+
+    // List of courses who will be courses
+    let mut courses = vec![];
+
+    // Counter of courses appearing to know if multiples slots are available
+    let mut counts = HashMap::new();
+    timetable.1 .1.iter().for_each(|day| {
+        day.courses.iter().for_each(|course_opt| {
+            if let Some(course) = course_opt {
+                if course.category == Category::Cours {
+                    courses.push((course, day.name.to_owned()));
+                    let count = counts.entry(get_entry(course)).or_insert(0);
+                    *count += 1;
+                }
+            }
+        })
+    });
+
+    // Keep only elements who have multiples slots
+    courses.retain(|course| *counts.get(&get_entry(course.0)).unwrap() > 1);
+
+    let mut multiselected: Vec<String> = courses.iter().map(get_selection).collect();
+    multiselected.sort();
+
+    let mut selections = vec![];
+    if !multiselected.is_empty() {
+        let defaults = vec![false; multiselected.len()];
+        selections = MultiSelect::new()
+            .with_prompt(format!("Choisis tes horaires de Cours {}", DISCLAIMER))
+            .items(&multiselected[..])
+            .defaults(&defaults[..])
+            .interact()
+            .unwrap();
+    }
+
+    // Keep only wanted courses
+    for day in &mut timetable.1 .1 {
+        day.courses.retain(|course_opt| {
+            if let Some(course) = course_opt {
+                // Keep if it's a TD/TP
+                if course.category == Category::TD || course.category == Category::TP {
+                    return true;
+                }
+
+                // Keep if only one slot is available
+                if *counts.get(&get_entry(course)).unwrap() == 1 {
+                    return true;
+                }
+
+                // Keep only chosen courses
+                for i in &selections {
+                    if get_selection(&(course, day.name.to_owned())) == multiselected[*i] {
                         return true;
                     }
                 }
