@@ -104,13 +104,16 @@ fn tdtp(timetable: &mut Timetable) {
     let mut multiselected: Vec<String> = td_or_tp.iter().map(get_selection).collect();
     multiselected.sort();
 
-    let defaults = vec![false; multiselected.len()];
-    let selections = MultiSelect::new()
-        .with_prompt(format!("Choisis tes horaires de TD/TP {}", DISCLAIMER))
-        .items(&multiselected[..])
-        .defaults(&defaults[..])
-        .interact()
-        .unwrap();
+    let mut selections = vec![];
+    if !multiselected.is_empty() {
+        let defaults = vec![false; multiselected.len()];
+        selections = MultiSelect::new()
+            .with_prompt(format!("Choisis tes horaires de TD/TP {}", DISCLAIMER))
+            .items(&multiselected[..])
+            .defaults(&defaults[..])
+            .interact()
+            .unwrap();
+    }
 
     // Keep only wanted courses
     for day in &mut timetable.1 .1 {
