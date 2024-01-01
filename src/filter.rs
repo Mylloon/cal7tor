@@ -101,7 +101,7 @@ fn tdtp(timetable: &mut Timetable) {
     // Keep only elements who have multiples TD/TP
     td_or_tp.retain(|course| *counts.get(&get_entry(course.0)).unwrap() > 1);
 
-    let mut multiselected: Vec<String> = td_or_tp.iter().map(|el| get_selection(el)).collect();
+    let mut multiselected: Vec<String> = td_or_tp.iter().map(get_selection).collect();
     multiselected.sort();
 
     let defaults = vec![false; multiselected.len()];

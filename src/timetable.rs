@@ -154,7 +154,7 @@ pub fn build(timetable: models::Timetable, dates: D) -> Vec<models::Course> {
 
     // Start date of the back-to-school week
     let datetimes = dates.get(&timetable.1 .0).unwrap();
-    let before_break = datetimes.get(0).unwrap();
+    let before_break = datetimes.first().unwrap();
     let mut date = before_break.0;
     let mut rep = before_break.1;
     // For each weeks
