@@ -33,15 +33,17 @@ pub async fn info(
     let re = Regex::new(r"\d{1,2} (septembre|octobre)").unwrap();
     let date = re.captures(&raw_data).unwrap().get(0).unwrap().as_str();
 
-    let weeks_s1_1 = 6; // Number of weeks in the first part of the first semester
-    let date_s1_1 = get_date(&format!("{} {}", date, year.split_once('-').unwrap().0)); // Get week of back-to-school
-    let weeks_s1_2 = 7; // Number of weeks in the second part of the first semester
-    let date_s1_2 = date_s1_1 + Duration::weeks(weeks_s1_1 + 1); // Add past weeks with the break-week
+    // 1st semester
+    let weeks_s1_1 = 6; // Weeks before break
+    let weeks_s1_2 = 7; // Weeks after break
+    let date_s1_1 = get_date(&format!("{} {}", date, year.split_once('-').unwrap().0)); // Get first week of school
+    let date_s1_2 = date_s1_1 + Duration::weeks(weeks_s1_1 + 1); // Back-to-school week - add week of holidays
 
-    let weeks_s2_1 = 6; // Number of weeks in the first part of the second semester
-    let date_s2_1 = date_s1_2 + Duration::weeks(weeks_s1_2 + 4); // 4 weeks of vacation between semester
-    let weeks_s2_2 = 7; // Number of weeks in the second part of the second semester
-    let date_s2_2 = date_s2_1 + Duration::weeks(weeks_s2_1 + 1); // Add past weeks with the break-week
+    // 2nd semester
+    let weeks_s2_1 = 11; // Weeks before break
+    let weeks_s2_2 = 1; // Weeks after break
+    let date_s2_1 = date_s1_2 + Duration::weeks(weeks_s1_2 + 4); // Get first week - add week of 'christmas/new year holidays'
+    let date_s2_2 = date_s2_1 + Duration::weeks(weeks_s2_1 + 2); // Back-to-school week - add week of holidays
 
     HashMap::from([
         (
