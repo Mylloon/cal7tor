@@ -3,14 +3,17 @@ use regex::{Captures, Regex};
 use scraper::Selector;
 use std::{collections::HashMap, sync::Arc};
 
-use crate::utils::{get_semester, get_webpage, get_year};
+use crate::utils::{
+    get_semester, get_webpage, get_year,
+    models::{Info, InfoList, InfoType},
+};
 
 pub async fn info(
     level: i8,
     semester_opt: Option<i8>,
     year_opt: Option<i32>,
     user_agent: &str,
-) -> HashMap<usize, Vec<(DateTime<Utc>, i64)>> {
+) -> Info {
     let semester = get_semester(semester_opt);
     let year = get_year(year_opt, semester);
 
@@ -45,16 +48,40 @@ pub async fn info(
     let date_s2_1 = date_s1_2 + Duration::weeks(weeks_s1_2 + 4); // Get first week - add week of 'christmas/new year holidays'
     let date_s2_2 = date_s2_1 + Duration::weeks(weeks_s2_1 + 2); // Back-to-school week - add week of holidays
 
+    // Group courses values and derive it for TD/TP
+    let cours_s1 = vec![(date_s1_1, weeks_s1_1), (date_s1_2, weeks_s1_2)];
+    let cours_s2 = vec![(date_s2_1, weeks_s2_1), (date_s2_2, weeks_s2_2)];
+
+    let tdtp_s1 = derive_from_cours(&cours_s1);
+    let tdtp_s2 = derive_from_cours(&cours_s2);
+
     HashMap::from([
         (
             1_usize,
-            vec![(date_s1_1, weeks_s1_1), (date_s1_2, weeks_s1_2)],
+            InfoType {
+                course: cours_s1,
+                td_tp: tdtp_s1,
+            },
         ),
         (
             2_usize,
-            vec![(date_s2_1, weeks_s2_1), (date_s2_2, weeks_s2_2)],
+            InfoType {
+                course: cours_s2,
+                td_tp: tdtp_s2,
+            },
         ),
     ])
+}
+
+/// Find TD/TP dates, based on the ones from courses
+fn derive_from_cours(courses: &InfoList) -> Vec<(DateTime<Utc>, i64)> {
+    // TD/TP start one week after courses
+    let before_break = courses.first().unwrap();
+    let after_break = courses.last().unwrap();
+    vec![
+        (before_break.0 + Duration::weeks(1), before_break.1 - 1),
+        (after_break.0, after_break.1 + 1),
+    ]
 }
 
 /// Turn a french date to an english one

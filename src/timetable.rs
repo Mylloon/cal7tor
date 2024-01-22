@@ -5,9 +5,11 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::utils::{
     self, get_hours, get_semester, get_webpage, get_year,
-    models::{Position, TabChar},
+    models::{Info, InfoList, Position, TabChar},
     Capitalize,
 };
+
+use self::models::Day;
 
 pub mod models;
 
@@ -121,16 +123,8 @@ pub async fn timetable(
     (schedules, (semester as usize, timetable))
 }
 
-// Data builded in the info webpage
-type D = HashMap<
-    // Semester
-    usize,
-    // List of start and repetition of course weeks
-    Vec<(chrono::DateTime<Utc>, i64)>,
->;
-
 /// Build the timetable
-pub fn build(timetable: models::Timetable, dates: D) -> Vec<models::Course> {
+pub fn build(timetable: models::Timetable, dates: Info) -> Vec<models::Course> {
     let mut schedules = Vec::new();
     // h1 => heure de début | m1 => minute de début
     // h2 => heure de fin   | m2 => minute de fin
@@ -162,18 +156,66 @@ pub fn build(timetable: models::Timetable, dates: D) -> Vec<models::Course> {
 
     // Start date of the back-to-school week
     let datetimes = dates.get(&timetable.1 .0).unwrap();
-    let before_break = datetimes.first().unwrap();
+    add_courses(
+        &mut semester,
+        &schedules,
+        &timetable.1 .1,
+        &datetimes.course,
+        Some(vec![models::Category::Cours]),
+        None,
+    );
+    add_courses(
+        &mut semester,
+        &schedules,
+        &timetable.1 .1,
+        &datetimes.td_tp,
+        None,
+        Some(vec![models::Category::Cours]),
+    );
+
+    semester
+}
+
+type Schedule = [((u32, u32), (u32, u32))];
+
+/// Add a course to the semester list
+fn add_courses(
+    // Accumulator of courses of semester
+    semester: &mut Vec<models::Course>,
+    // Hours used
+    schedules: &Schedule,
+    // List of days
+    days: &Vec<Day>,
+    // Current courses list
+    info: &InfoList,
+    // List of category allowed
+    keep: Option<Vec<models::Category>>,
+    // List of category excluded
+    exclude: Option<Vec<models::Category>>,
+) {
+    let before_break = info.first().unwrap();
     let mut date = before_break.0;
     let mut rep = before_break.1;
     // For each weeks
     for _ in 0..2 {
         for _ in 0..rep {
-            for day in &timetable.1 .1 {
-                for mut course in day.courses.clone().into_iter().flatten() {
+            for day in days {
+                for mut course in day.courses.iter().flatten().cloned() {
                     // Get the hours
                     let start = schedules.get(course.start).unwrap().0;
                     // -1 because we only add when the size is > 1
                     let end = schedules.get(course.start + course.size - 1).unwrap().1;
+
+                    // Check keep and exclude filters
+                    if keep
+                        .to_owned()
+                        .is_some_and(|list| !course.category.iter().any(|item| list.contains(item)))
+                        || exclude.to_owned().is_some_and(|list| {
+                            course.category.iter().all(|item| list.contains(item))
+                        })
+                    {
+                        continue;
+                    }
 
                     // Add the changed datetimes
                     course.dtstart = Some(
@@ -206,12 +248,10 @@ pub fn build(timetable: models::Timetable, dates: D) -> Vec<models::Course> {
             // From friday to monday
             date += Duration::days(2);
         }
-        let after_break = datetimes.get(1).unwrap();
+        let after_break = info.last().unwrap();
         date = after_break.0;
         rep = after_break.1;
     }
-
-    semester
 }
 
 /// Display the timetable
