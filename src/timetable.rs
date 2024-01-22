@@ -211,7 +211,7 @@ fn add_courses(
                         .to_owned()
                         .is_some_and(|list| !course.category.iter().any(|item| list.contains(item)))
                         || exclude.to_owned().is_some_and(|list| {
-                            course.category.iter().all(|item| list.contains(item))
+                            course.category.iter().any(|item| list.contains(item))
                         })
                     {
                         continue;
