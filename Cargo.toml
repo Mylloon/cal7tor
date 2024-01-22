@@ -1,6 +1,6 @@
 [package]
 name = "cal7tor"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["Mylloon"]
 edition = "2021"
 description = "Timetable extractor for the Paris Cité master's degree in IT"
