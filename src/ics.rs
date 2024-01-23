@@ -8,7 +8,7 @@ use ics::{
 };
 
 pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut String) {
-    let mut calendar = ICalendar::new("2.0", "cal8tor");
+    let mut calendar = ICalendar::new("2.0", "cal7tor");
 
     // Add Europe/Paris timezone
     let timezone_name = "Europe/Paris";
