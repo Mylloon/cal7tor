@@ -4,12 +4,13 @@ use crate::timetable::models::Category;
 use crate::timetable::models::Timetable;
 use crate::utils::get_count;
 use crate::utils::get_entry;
+use crate::utils::get_entry_nocat;
 use crate::utils::get_selection;
 
 const DISCLAIMER: &str = "(selection avec ESPACE, ENTRER pour valider)";
 
 /// Filter the timetable
-pub fn timetable(timetable: Timetable) -> Timetable {
+pub fn timetable(timetable: Timetable, merge_td_tp: bool) -> Timetable {
     let mut my_timetable = timetable;
 
     /* Note on Cours/TD:
@@ -21,7 +22,7 @@ pub fn timetable(timetable: Timetable) -> Timetable {
 
     choice(&mut my_timetable);
     courses(&mut my_timetable);
-    tdtp(&mut my_timetable);
+    tdtp(&mut my_timetable, merge_td_tp);
 
     my_timetable
 }
@@ -65,12 +66,14 @@ fn choice(timetable: &mut Timetable) {
 
 /// Filter the multiple courses
 fn courses(timetable: &mut Timetable) {
+    let entry_getter = get_entry;
+
     // List of courses and Counter of how much they appears
     // to know if multiples slots are available
-    let (mut courses, counts) = get_count(timetable, &[Category::Cours]);
+    let (mut courses, counts) = get_count(timetable, &[Category::Cours], entry_getter);
 
     // Keep only elements who have multiples slots
-    courses.retain(|course| *counts.get(&get_entry(course.0)).unwrap() > 1);
+    courses.retain(|course| *counts.get(&entry_getter(course.0)).unwrap() > 1);
 
     let mut multiselected: Vec<String> = courses.iter().map(get_selection).collect();
     multiselected.sort();
@@ -98,7 +101,7 @@ fn courses(timetable: &mut Timetable) {
                 }
 
                 // Keep if only one slot is available
-                if *counts.get(&get_entry(course)).unwrap() == 1 {
+                if *counts.get(&entry_getter(course)).unwrap() == 1 {
                     return true;
                 }
 
@@ -116,13 +119,16 @@ fn courses(timetable: &mut Timetable) {
 }
 
 /// Filter the multiples TD/TP
-fn tdtp(timetable: &mut Timetable) {
+fn tdtp(timetable: &mut Timetable, merge: bool) {
+    // If we differentiate TD from TP
+    let entry_getter = if merge { get_entry_nocat } else { get_entry };
+
     // List of TP/TD and Counter of how much they appears
     // to know if multiples slots are available
-    let (mut td_or_tp, counts) = get_count(timetable, &[Category::TD, Category::TP]);
+    let (mut td_or_tp, counts) = get_count(timetable, &[Category::TD, Category::TP], entry_getter);
 
     // Keep only elements who have multiples TD/TP
-    td_or_tp.retain(|course| *counts.get(&get_entry(course.0)).unwrap() > 1);
+    td_or_tp.retain(|course| *counts.get(&entry_getter(course.0)).unwrap() > 1);
 
     let mut multiselected: Vec<String> = td_or_tp.iter().map(get_selection).collect();
     multiselected.sort();
@@ -148,7 +154,7 @@ fn tdtp(timetable: &mut Timetable) {
                 }
 
                 // Keep if only one slot is available of the TD/TP
-                if *counts.get(&get_entry(course)).unwrap() == 1 {
+                if *counts.get(&entry_getter(course)).unwrap() == 1 {
                     return true;
                 }
 

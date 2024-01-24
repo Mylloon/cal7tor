@@ -224,10 +224,16 @@ pub fn get_entry(course: &Course) -> String {
     format!("{} - {:?}", course.name, course.category)
 }
 
+/// Entry's name used for finding duplicates, ignoring categories
+pub fn get_entry_nocat(course: &Course) -> String {
+    course.name.to_owned()
+}
+
 /// Returns a couple of (list of courses) and (a hashmap of how much they appears in the vector)
 pub fn get_count<'a>(
     timetable: &'a mut Timetable,
     allowed_list: &'a [Category],
+    getter: fn(&Course) -> String,
 ) -> (Vec<(&'a Course, String)>, HashMap<String, i32>) {
     // List of courses who will be courses
     let mut courses = vec![];
@@ -242,7 +248,7 @@ pub fn get_count<'a>(
                     .any(|category| allowed_list.contains(category))
                 {
                     courses.push((course, day.name.to_owned()));
-                    let count = counts.entry(get_entry(course)).or_insert(0);
+                    let count = counts.entry(getter(course)).or_insert(0);
                     *count += 1;
                 }
             }

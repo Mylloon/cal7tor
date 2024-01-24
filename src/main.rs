@@ -29,6 +29,10 @@ struct Args {
     /// Size of cell of the timetable (irrelevant when exporting the timetable)
     #[clap(short, long, value_name = "CELL LENGTH", default_value_t = 35)]
     cl: usize,
+
+    /// Doesn't distinguish TD from TP
+    #[clap(short, long)]
+    td_are_tp: bool,
 }
 
 #[tokio::main]
@@ -52,7 +56,7 @@ async fn main() {
     println!("Récupération de l'emploi du temps des M{}...", level,);
     let mut timetable = timetable::timetable(level, args.semester, args.year, &user_agent).await;
 
-    timetable = filter::timetable(timetable);
+    timetable = filter::timetable(timetable, args.td_are_tp);
 
     println!("Récupération des informations par rapport à l'année...");
     let info = info::info(level, args.semester, args.year, &user_agent).await;
