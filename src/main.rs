@@ -26,7 +26,7 @@ struct Args {
     #[clap(short, long, value_name = "FILE NAME")]
     export: Option<String>,
 
-    /// Size of cell of the timetable (irrelevant when exporting the timetable)
+    /// Size of cell of the timetable (irrelevant when exporting)
     #[clap(short, long, value_name = "CELL LENGTH", default_value_t = 35)]
     cl: usize,
 
