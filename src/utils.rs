@@ -184,6 +184,7 @@ impl Capitalize for str {
     }
 }
 
+/// Get all hours used the source, from 08:00 to at least 20:00
 pub fn get_hours() -> Arc<[String]> {
     let mut hours = vec![];
     for hour in 8..=20 {
@@ -223,6 +224,7 @@ pub fn get_entry(course: &Course) -> String {
     format!("{} - {:?}", course.name, course.category)
 }
 
+/// Returns a couple of (list of courses) and (a hashmap of how much they appears in the vector)
 pub fn get_count<'a>(
     timetable: &'a mut Timetable,
     allowed_list: &'a [Category],
