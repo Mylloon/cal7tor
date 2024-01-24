@@ -10,15 +10,15 @@ mod utils;
 #[derive(Parser)]
 #[clap(version, about, long_about = None)]
 struct Args {
-    /// The class you want to get the timetable, i.e.: M1-LP
+    /// The class you want to get the timetable, i.e.: M1
     #[clap(value_parser)]
     class: String,
 
-    /// The semester you want (1 or 2)
+    /// The semester you want (1 or 2), default to current semester
     #[clap(short, long, value_parser, value_name = "SEMESTER NUMBER")]
     semester: Option<i8>,
 
-    /// The year, default to the current year
+    /// The year, default to current year
     #[clap(short, long, value_parser, value_name = "YEAR")]
     year: Option<i32>,
 
