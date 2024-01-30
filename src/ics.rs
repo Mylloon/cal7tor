@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use chrono::TimeZone;
 use ics::{
-    parameters::{Language, TzIDParam},
+    parameters::{Language, PartStat, Role, TzIDParam, CN},
     properties::{
         Attendee, Categories, Class, Description, DtEnd, DtStart, Location, Summary, Transp,
     },
@@ -40,9 +40,12 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
 
         // Professor's name
         if course.professor.is_some() {
-            event.push(Attendee::new(
-                "mailto:".to_owned() + &course.professor.unwrap(),
-            ));
+            let name = course.professor.unwrap();
+            let mut contact = Attendee::new(format!("mailto:{name}"));
+            contact.add(CN::new(name));
+            contact.add(PartStat::ACCEPTED);
+            contact.add(Role::CHAIR);
+            event.push(contact);
         }
 
         // Start time of the course
