@@ -41,7 +41,7 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
         // Professor's name
         if course.professor.is_some() {
             let name = course.professor.unwrap();
-            let mut contact = Attendee::new(format!("mailto:{name}"));
+            let mut contact = Attendee::new("mailto:place@holder.com");
             contact.add(CN::new(name));
             contact.add(PartStat::ACCEPTED);
             contact.add(Role::CHAIR);
