@@ -3,7 +3,9 @@ use std::sync::Arc;
 use chrono::TimeZone;
 use ics::{
     parameters,
-    properties::{Categories, Class, Description, DtEnd, DtStart, Location, Summary, Transp},
+    properties::{
+        Categories, Class, Comment, Description, DtEnd, DtStart, Location, Summary, Transp,
+    },
     Event, ICalendar, Standard,
 };
 
@@ -68,6 +70,11 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
 
         // Course's category
         event.push(Categories::new(categories));
+
+        // Course extra data
+        if course.data.is_some() {
+            event.push(Comment::new(course.data.unwrap()));
+        }
 
         // Add the course to the calendar
         calendar.add_event(event);

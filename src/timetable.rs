@@ -34,6 +34,7 @@ pub async fn timetable(
     let sel_td = Selector::parse("td").unwrap();
     let sel_small = Selector::parse("small").unwrap();
     let sel_b = Selector::parse("b").unwrap();
+    let sel_span = Selector::parse("span").unwrap();
 
     // Find the timetable
     let raw_timetable = document.select(&sel_table).next().unwrap();
@@ -49,6 +50,9 @@ pub async fn timetable(
         .select(&sel_td)
         .filter(|element| element.value().attr("title").is_some())
         .for_each(|i| {
+            let extra_data = i.select(&sel_span).next().map(|span|
+                 span.inner_html().replace("<br>", "").trim().to_owned()
+            );
             let matches =
                 Regex::new(r"(?P<type>COURS|TD|TP|COURS_TD) (?P<name>.*) : (?P<day>(lundi|mardi|mercredi|jeudi|vendredi)) (?P<startime>.*) \(durée : (?P<duration>.*)\)")
                     .unwrap()
@@ -98,6 +102,7 @@ pub async fn timetable(
                 size: i.value().attr("rowspan").unwrap().parse::<usize>().unwrap(),
                 dtstart: None,
                 dtend: None,
+                data: extra_data,
             };
 
             // Search for the day in the timetable

@@ -43,6 +43,9 @@ pub struct Course {
     /// Datetime when the course end
     /// Filled only when building for the ICS
     pub dtend: Option<chrono::DateTime<chrono::Utc>>,
+
+    /// Extra data
+    pub data: Option<String>,
 }
 
 #[derive(Debug)]
