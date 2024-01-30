@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use chrono::TimeZone;
 use ics::{
-    parameters,
+    parameters::{Language, TzIDParam},
     properties::{
         Categories, Class, Comment, Description, DtEnd, DtStart, Location, Summary, Transp,
     },
@@ -45,12 +45,12 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
 
         // Start time of the course
         let mut date_start = DtStart::new(dt_ical(course.dtstart.unwrap()));
-        date_start.append(parameters!("TZID" => timezone_name));
+        date_start.add(TzIDParam::new(timezone_name));
         event.push(date_start);
 
         // End time of the course
         let mut date_end = DtEnd::new(dt_ical(course.dtend.unwrap()));
-        date_end.append(parameters!("TZID" => timezone_name));
+        date_end.add(TzIDParam::new(timezone_name));
         event.push(date_end);
 
         // Room location
@@ -65,7 +65,7 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
 
         // Course's name
         let mut course_name = Summary::new(format!("{} - {}", categories, course.name));
-        course_name.append(parameters!("LANGUAGE" => "fr"));
+        course_name.add(Language::new("fr"));
         event.push(course_name);
 
         // Course's category
