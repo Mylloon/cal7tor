@@ -40,7 +40,9 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
 
         // Professor's name
         if course.professor.is_some() {
-            event.push(Attendee::new(course.professor.unwrap()));
+            event.push(Attendee::new(
+                "mailto:".to_owned() + &course.professor.unwrap(),
+            ));
         }
 
         // Start time of the course
