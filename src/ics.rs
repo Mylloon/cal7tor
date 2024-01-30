@@ -4,7 +4,7 @@ use chrono::TimeZone;
 use ics::{
     parameters::{Language, TzIDParam},
     properties::{
-        Categories, Class, Comment, Description, DtEnd, DtStart, Location, Summary, Transp,
+        Attendee, Categories, Class, Description, DtEnd, DtStart, Location, Summary, Transp,
     },
     Event, ICalendar, Standard,
 };
@@ -40,7 +40,7 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
 
         // Professor's name
         if course.professor.is_some() {
-            event.push(Description::new(course.professor.unwrap()));
+            event.push(Attendee::new(course.professor.unwrap()));
         }
 
         // Start time of the course
@@ -73,7 +73,7 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
 
         // Course extra data
         if course.data.is_some() {
-            event.push(Comment::new(course.data.unwrap()));
+            event.push(Description::new(course.data.unwrap()));
         }
 
         // Add the course to the calendar
