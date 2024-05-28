@@ -11,7 +11,7 @@ pub mod models;
 pub fn check_errors(html: &String, loc: &str) {
     let no_timetable = "Aucun créneau horaire affecté";
     match html {
-        t if t.contains(no_timetable) => panic!("URL: {} • {}", loc, no_timetable),
+        t if t.contains(no_timetable) => panic!("URL: {loc} • {no_timetable}"),
         _ => (),
     }
 }
@@ -21,8 +21,8 @@ pub fn line_table(
     cell_length_hours: usize,
     cell_length: usize,
     number_cell: usize,
-    pos: models::Position,
-    skip_with: std::collections::HashMap<usize, &str>,
+    pos: &models::Position,
+    skip_with: &std::collections::HashMap<usize, &str>,
 ) {
     // Left side
     let ls = match pos {
@@ -60,8 +60,8 @@ pub fn line_table(
 
     // Hours column
     match skip_with.get(&0) {
-        Some(_) => print!("\n{}{}{}", ls, line_h, rs_bbc),
-        None => print!("\n{}{}{}", ls, line_h, ms),
+        Some(_) => print!("\n{ls}{line_h}{rs_bbc}"),
+        None => print!("\n{ls}{line_h}{ms}"),
     };
 
     // Courses columns
@@ -72,26 +72,26 @@ pub fn line_table(
         if i == range - 1 {
             // Friday only
             if let Some(text) = skip_with.get(&i) {
-                println!("{:^cell_length$}{}", text, rsbc_bbc);
+                println!("{text:^cell_length$}{rsbc_bbc}");
                 last_day = true;
             }
         } else {
             match skip_with.get(&i) {
                 Some(text) => match skip_with.get(&(i + 1)) {
                     // Match check if the next cell will be big
-                    Some(_) => print!("{:^cell_length$}{}", text, rsbc_bbc),
-                    None => print!("{:^cell_length$}{}", text, rsbc),
+                    Some(_) => print!("{text:^cell_length$}{rsbc_bbc}"),
+                    None => print!("{text:^cell_length$}{rsbc}"),
                 },
                 None => match skip_with.get(&(i + 1)) {
                     // Match check if the next cell will be big
-                    Some(_) => print!("{}{}", line, rs_bbc),
-                    None => print!("{}{}", line, ms),
+                    Some(_) => print!("{line}{rs_bbc}"),
+                    None => print!("{line}{ms}"),
                 },
             }
         }
     }
     if !last_day {
-        println!("{}{}", line, rs);
+        println!("{line}{rs}");
     }
 }
 
@@ -119,7 +119,7 @@ pub async fn get_webpage(
     year: &str,
     user_agent: &str,
 ) -> Result<Html, Box<dyn std::error::Error>> {
-    let url = format!("https://silice.informatique.univ-paris-diderot.fr/ufr/U{}/EDT/visualiserEmploiDuTemps.php?quoi=M{},{}", year, level, semester);
+    let url = format!("https://silice.informatique.univ-paris-diderot.fr/ufr/U{year}/EDT/visualiserEmploiDuTemps.php?quoi=M{level},{semester}");
 
     // Use custom User-Agent
     let client = reqwest::Client::builder().user_agent(user_agent).build()?;
@@ -189,9 +189,9 @@ pub fn get_hours() -> Arc<[String]> {
     let mut hours = vec![];
     for hour in 8..=20 {
         for minute in &[0, 15, 30, 45] {
-            let hour_str = format!("{}h{:02}", hour, minute);
+            let hour_str = format!("{hour}h{minute:02}");
             if let Some(last_hour) = hours.pop() {
-                hours.push(format!("{}-{}", last_hour, hour_str));
+                hours.push(format!("{last_hour}-{hour_str}"));
             }
             hours.push(hour_str);
         }
@@ -226,7 +226,7 @@ pub fn get_entry(course: &Course) -> String {
 
 /// Entry's name used for finding duplicates, ignoring categories
 pub fn get_entry_nocat(course: &Course) -> String {
-    course.name.to_owned()
+    course.name.clone()
 }
 
 /// Returns a couple of (list of courses) and (a hashmap of how much they appears in the vector)
@@ -247,12 +247,12 @@ pub fn get_count<'a>(
                     .iter()
                     .any(|category| allowed_list.contains(category))
                 {
-                    courses.push((course, day.name.to_owned()));
+                    courses.push((course, day.name.clone()));
                     let count = counts.entry(getter(course)).or_insert(0);
                     *count += 1;
                 }
             }
-        })
+        });
     });
 
     (courses, counts)

@@ -1,3 +1,5 @@
+#![allow(clippy::cast_sign_loss)]
+
 use chrono::{Datelike, Duration, TimeZone, Utc};
 use regex::Regex;
 use scraper::Selector;
@@ -111,7 +113,7 @@ pub async fn timetable(
             } else {
                 // Day with the name doesn't exist, create a new Day
                 timetable.push(models::Day {
-                    name: day.to_owned(),
+                    name: day.clone(),
                     courses: vec![Some(course)],
                 });
             }
@@ -129,7 +131,7 @@ pub async fn timetable(
 }
 
 /// Build the timetable
-pub fn build(timetable: models::Timetable, dates: Info) -> Vec<models::Course> {
+pub fn build(timetable: &models::Timetable, dates: &Info) -> Vec<models::Course> {
     let mut schedules = Vec::new();
     // h1 => heure de début | m1 => minute de début
     // h2 => heure de fin   | m2 => minute de fin
@@ -166,16 +168,16 @@ pub fn build(timetable: models::Timetable, dates: Info) -> Vec<models::Course> {
         &schedules,
         &timetable.1 .1,
         &datetimes.course,
-        Some(vec![models::Category::Cours]),
-        None,
+        &Some(vec![models::Category::Cours]),
+        &None,
     );
     add_courses(
         &mut semester,
         &schedules,
         &timetable.1 .1,
         &datetimes.td_tp,
-        None,
-        Some(vec![models::Category::Cours]),
+        &None,
+        &Some(vec![models::Category::Cours]),
     );
 
     semester
@@ -194,9 +196,9 @@ fn add_courses(
     // Current courses list
     info: &InfoList,
     // List of category allowed
-    keep: Option<Vec<models::Category>>,
+    keep: &Option<Vec<models::Category>>,
     // List of category excluded
-    exclude: Option<Vec<models::Category>>,
+    exclude: &Option<Vec<models::Category>>,
 ) {
     let before_break = info.first().unwrap();
     let mut date = before_break.0;
@@ -213,9 +215,9 @@ fn add_courses(
 
                     // Check keep and exclude filters
                     if keep
-                        .to_owned()
+                        .clone()
                         .is_some_and(|list| !course.category.iter().any(|item| list.contains(item)))
-                        || exclude.to_owned().is_some_and(|list| {
+                        || exclude.clone().is_some_and(|list| {
                             course.category.iter().any(|item| list.contains(item))
                         })
                     {
@@ -260,7 +262,7 @@ fn add_courses(
 }
 
 /// Display the timetable
-pub fn display(timetable: (Arc<[String]>, (usize, Vec<models::Day>)), cell_length: usize) {
+pub fn display(timetable: &(Arc<[String]>, (usize, Vec<models::Day>)), cell_length: usize) {
     // Cell length for hours
     let clh = 11;
     // Cell number
@@ -271,7 +273,7 @@ pub fn display(timetable: (Arc<[String]>, (usize, Vec<models::Day>)), cell_lengt
     let sep = TabChar::Bv.val();
 
     // Top of the tab
-    utils::line_table(clh, cell_length, cn, Position::Top, HashMap::new());
+    utils::line_table(clh, cell_length, cn, &Position::Top, &HashMap::new());
 
     // First empty case
     print!("{}{:^clh$}{}", sep, "", sep);
@@ -288,13 +290,13 @@ pub fn display(timetable: (Arc<[String]>, (usize, Vec<models::Day>)), cell_lengt
     // For each hours -- i the hour's number
     for (i, hour) in timetable.0.iter().enumerate() {
         // Draw separator line
-        utils::line_table(clh, cell_length, cn, Position::Middle, next_skip);
+        utils::line_table(clh, cell_length, cn, &Position::Middle, &next_skip);
 
         // Reset
         next_skip = HashMap::new();
 
         // Print hour
-        print!("{}{:^clh$}", sep, hour);
+        print!("{sep}{hour:^clh$}");
 
         // For all the days - `j` the day's number
         for (j, day) in timetable.1 .1.iter().enumerate() {
@@ -321,17 +323,17 @@ pub fn display(timetable: (Arc<[String]>, (usize, Vec<models::Day>)), cell_lengt
                                 }
                                 info_slot = true;
                                 break;
-                            } else {
-                                // Else simply print the course
-                                // If the data is too long
-                                if course.name.len() > quarter {
-                                    print!("{}{:^cell_length$}", sep, utils::etc_str(&course.name));
-                                } else {
-                                    print!("{}{:^cell_length$}", sep, &course.name);
-                                }
-                                info_slot = true;
-                                break;
                             }
+
+                            // Else simply print the course
+                            // If the data is too long
+                            if course.name.len() > quarter {
+                                print!("{}{:^cell_length$}", sep, utils::etc_str(&course.name));
+                            } else {
+                                print!("{}{:^cell_length$}", sep, &course.name);
+                            }
+                            info_slot = true;
+                            break;
                         }
                     }
                     // If no course was found
@@ -353,8 +355,8 @@ pub fn display(timetable: (Arc<[String]>, (usize, Vec<models::Day>)), cell_lengt
                 print!("{}{:^cell_length$}", sep, "");
             }
         }
-        print!("{}", sep);
+        print!("{sep}");
     }
     // Bottom of the table
-    utils::line_table(clh, cell_length, cn, Position::Bottom, HashMap::new());
+    utils::line_table(clh, cell_length, cn, &Position::Bottom, &HashMap::new());
 }

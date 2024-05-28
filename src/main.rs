@@ -53,7 +53,7 @@ async fn main() {
 
     let user_agent = format!("cal7tor/{}", env!("CARGO_PKG_VERSION"));
 
-    println!("Récupération de l'emploi du temps des M{}...", level,);
+    println!("Récupération de l'emploi du temps des M{level}...");
     let mut timetable = timetable::timetable(level, args.semester, args.year, &user_agent).await;
 
     timetable = filter::timetable(timetable, args.td_are_tp);
@@ -65,15 +65,15 @@ async fn main() {
         // Export the calendar
         let mut filename = args.export.unwrap();
 
-        let builded_timetable = timetable::build(timetable, info);
+        let builded_timetable = timetable::build(&timetable, &info);
         ics::export(builded_timetable, &mut filename);
 
-        println!("Fichier .ICS construit et exporté => {}", filename);
+        println!("Fichier .ICS construit et exporté => {filename}");
     } else {
         println!("\x1b[93mNOTICE: IT WON'T WORK!!!\x1b[0m");
         // Show the calendar
         println!("Affichage...");
-        timetable::display(timetable, args.cl);
+        timetable::display(&timetable, args.cl);
         println!("Vous devrez peut-être mettre votre terminal en plein écran si ce n'est pas déjà le cas.");
     }
 }

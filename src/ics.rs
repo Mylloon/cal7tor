@@ -64,7 +64,7 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
         let categories = course
             .category
             .iter()
-            .map(|c| c.to_string())
+            .map(std::string::ToString::to_string)
             .collect::<Arc<[String]>>()
             .join("/");
 
@@ -86,8 +86,11 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
     }
 
     // Add the extension if needed
-    if !filename.ends_with(".ics") {
-        *filename = format!("{}.ics", filename)
+    if !std::path::Path::new(filename)
+        .extension()
+        .map_or(false, |ext| ext.eq_ignore_ascii_case("ics"))
+    {
+        *filename = format!("{filename}.ics");
     };
 
     calendar.save_file(filename).unwrap();

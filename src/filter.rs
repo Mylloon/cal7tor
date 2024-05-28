@@ -34,15 +34,15 @@ fn choice(timetable: &mut Timetable) {
         day.courses.iter().for_each(|course_opt| {
             if let Some(course) = course_opt {
                 if !multiselected.contains(&course.name) {
-                    multiselected.push(course.name.to_owned());
+                    multiselected.push(course.name.clone());
                 }
             }
-        })
+        });
     });
 
     let defaults = vec![true; multiselected.len()];
     let selections = MultiSelect::new()
-        .with_prompt(format!("Choisis tes matières {}", DISCLAIMER))
+        .with_prompt(format!("Choisis tes matières {DISCLAIMER}"))
         .items(&multiselected[..])
         .defaults(&defaults[..])
         .interact()
@@ -82,7 +82,7 @@ fn courses(timetable: &mut Timetable) {
     if !multiselected.is_empty() {
         let defaults = vec![false; multiselected.len()];
         selections = MultiSelect::new()
-            .with_prompt(format!("Choisis tes horaires de Cours {}", DISCLAIMER))
+            .with_prompt(format!("Choisis tes horaires de Cours {DISCLAIMER}"))
             .items(&multiselected[..])
             .defaults(&defaults[..])
             .interact()
@@ -107,7 +107,7 @@ fn courses(timetable: &mut Timetable) {
 
                 // Keep only chosen courses if multiple was available
                 for i in &selections {
-                    if get_selection(&(course, day.name.to_owned())) == multiselected[*i] {
+                    if get_selection(&(course, day.name.clone())) == multiselected[*i] {
                         return true;
                     }
                 }
@@ -137,7 +137,7 @@ fn tdtp(timetable: &mut Timetable, merge: bool) {
     if !multiselected.is_empty() {
         let defaults = vec![false; multiselected.len()];
         selections = MultiSelect::new()
-            .with_prompt(format!("Choisis tes horaires de TD/TP {}", DISCLAIMER))
+            .with_prompt(format!("Choisis tes horaires de TD/TP {DISCLAIMER}"))
             .items(&multiselected[..])
             .defaults(&defaults[..])
             .interact()
@@ -160,7 +160,7 @@ fn tdtp(timetable: &mut Timetable, merge: bool) {
 
                 // Keep only chosen TD/TP if multiple was available
                 for i in &selections {
-                    if get_selection(&(course, day.name.to_owned())) == multiselected[*i] {
+                    if get_selection(&(course, day.name.clone())) == multiselected[*i] {
                         return true;
                     }
                 }

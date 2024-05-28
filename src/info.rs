@@ -104,7 +104,7 @@ fn anglophonization(date: &str) -> String {
     // New regex of all the french month
     let re = Regex::new(&format!(
         "({})",
-        dico.keys().cloned().collect::<Arc<[_]>>().join("|")
+        dico.keys().copied().collect::<Arc<[_]>>().join("|")
     ))
     .unwrap();
 
@@ -115,13 +115,13 @@ fn anglophonization(date: &str) -> String {
         re.replace_all(date, |cap: &Captures| match &cap[0] {
             month if dico.contains_key(month) => dico.get(month).unwrap(),
             month => {
-                panic!("Unknown month: {}", month)
+                panic!("Unknown month: {month}")
             }
         })
     )
 }
 
-/// Turn a string to a DateTime
+/// Turn a string to a `DateTime`
 fn get_date(date: &str) -> DateTime<Utc> {
     // Use and keep UTC time, we have the hour set to 12h and
     // Paris 7 is in France so there is no problems

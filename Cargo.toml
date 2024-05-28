@@ -11,12 +11,20 @@ publish = false
 license = "AGPL-3.0-or-later"
 
 [dependencies]
-reqwest = { version = "0.11" }
-tokio = { version = "1.35", features = ["full"] }
-scraper = "0.18"
+reqwest = { version = "0.12" }
+tokio = { version = "1.37", features = ["full"] }
+scraper = "0.19"
 regex = "1.10"
-chrono = "0.4.31"
+chrono = "0.4.38"
 ics = { version = "0.5", default-features = false }
-uuid = { version = "1.6", features = ["v4", "fast-rng"] }
-clap = { version = "4.4", features = ["derive"] }
+uuid = { version = "1.8", features = ["v4", "fast-rng"] }
+clap = { version = "4.5", features = ["derive"] }
 dialoguer = "0.11"
+
+[lints.clippy]
+correctness = "warn"
+suspicious = "warn"
+complexity = "warn"
+perf = "warn"
+style = "warn"
+pedantic = "warn"
