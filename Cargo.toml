@@ -22,9 +22,4 @@ clap = { version = "4.5", features = ["derive"] }
 dialoguer = "0.11"
 
 [lints.clippy]
-correctness = "warn"
-suspicious = "warn"
-complexity = "warn"
-perf = "warn"
-style = "warn"
 pedantic = "warn"
