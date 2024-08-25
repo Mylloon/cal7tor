@@ -34,7 +34,14 @@ pub async fn info(
         .inner_html();
 
     let re = Regex::new(r"\d{1,2} (septembre|octobre)").unwrap();
-    let date = re.captures(&raw_data).unwrap().get(0).unwrap().as_str();
+    let date = re.captures(&raw_data).and_then(|caps| caps.get(0)).map_or(
+        {
+            let default = "1 septembre";
+            println!("Can't find the first week of school, default to : {default}");
+            default
+        },
+        |m| m.as_str(),
+    );
 
     // 1st semester
     let weeks_s1_1 = 6; // Weeks before break

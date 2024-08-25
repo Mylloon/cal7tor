@@ -55,8 +55,10 @@ pub async fn timetable(
             let extra_data = i.select(&sel_span).next().map(|span|
                  span.inner_html().replace("<br>", "").trim().to_owned()
             );
+
+            /* TODO: Instead of searching *_M2, just find any TD_* and TP_* */
             let matches =
-                Regex::new(r"(?P<type>COURS|TD|TP|COURS_TD) (?P<name>.*) : (?P<day>(lundi|mardi|mercredi|jeudi|vendredi)) (?P<startime>.*) \(durée : (?P<duration>.*)\)")
+                Regex::new(r"(?P<type>COURS|TD|TD_M2|TP|TP_M2|COURS_TD)? (?P<name>.*) : (?P<day>(lundi|mardi|mercredi|jeudi|vendredi)) (?P<startime>.*) \(durée : (?P<duration>.*)\)")
                     .unwrap()
                     .captures(i.value().attr("title").unwrap())
                     .unwrap();
@@ -76,13 +78,15 @@ pub async fn timetable(
             let course = models::Course{
                 category: match matches
                 .name("type")
-                .unwrap()
-                .as_str() {
+                .map_or("", |m| m.as_str()) {
                     "COURS" => [models::Category::Cours].into(),
-                    "TP" => [models::Category::TP].into(),
-                    "TD" => [models::Category::TD].into(),
+                    "TP" | "TP_M2" => [models::Category::TP].into(),
+                    "TD" | "TD_M2" => [models::Category::TD].into(),
                     "COURS_TD" => [models::Category::Cours, models::Category::TD].into(),
-                    _ => panic!("Unknown type of course")
+                    _ => {
+                        println!("Unknown type of course, falling back to 'COURS': {}", i.value().attr("title").unwrap());
+                        [models::Category::Cours].into()
+                    },
                 },
                 name: matches
                 .name("name")
