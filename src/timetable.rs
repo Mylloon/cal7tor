@@ -71,9 +71,9 @@ pub async fn timetable(
                 .capitalize();
 
             let startime = matches
-            .name("startime")
-            .unwrap()
-            .as_str();
+                .name("startime")
+                .unwrap()
+                .as_str();
 
             let binding = i.select(&sel_b).last().unwrap().inner_html();
             let course = models::Course{
@@ -91,21 +91,21 @@ pub async fn timetable(
                     },
                 },
                 name: matches
-                .name("name")
-                .unwrap()
-                .as_str().to_owned(),
+                    .name("name")
+                    .unwrap()
+                    .as_str().to_owned(),
                 professor: if let Some(raw_prof) = i.select(&sel_small).last() {
-                    match raw_prof.inner_html() {
-                        i if i.starts_with("<span") => None,
-                        i => Some(i),
-                    }
-                } else { None },
+                        match raw_prof.inner_html() {
+                            i if i.starts_with("<span") => None,
+                            i => Some(i),
+                        }
+                    } else { None },
                 room: Regex::new(r"(<table.*<\/table>|<br>.*?<br>.*?)?<br>(?P<location>.*?)<br>")
-                .unwrap()
-                .captures(&binding)
-                .unwrap().name("location")
-                .unwrap()
-                .as_str().to_owned(),
+                    .unwrap()
+                    .captures(&binding)
+                    .unwrap().name("location")
+                    .unwrap()
+                    .as_str().to_owned(),
                 start: schedules.iter().position(|r| r.starts_with(startime)).unwrap(),
                 size: i.value().attr("rowspan").unwrap().parse::<usize>().unwrap(),
                 dtstart: None,
