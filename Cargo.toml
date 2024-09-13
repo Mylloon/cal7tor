@@ -12,7 +12,7 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 reqwest = { version = "0.12" }
-tokio = { version = "1.39", features = ["full"] }
+tokio = { version = "1.40", features = ["full"] }
 scraper = "0.20"
 regex = "1.10"
 chrono = "0.4.38"
