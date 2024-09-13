@@ -58,7 +58,8 @@ pub async fn timetable(
 
             /* TODO: Instead of searching *_M2, just find any TD_* and TP_* */
             let matches =
-                Regex::new(r"(?P<type>COURS|TD|TD_M2|TP|TP_M2|COURS_TD)? (?P<name>.*) : (?P<day>(lundi|mardi|mercredi|jeudi|vendredi)) (?P<startime>.*) \(durée : (?P<duration>.*)\)")
+                Regex::new(
+                    r"(?P<type>COURS|COURS_TD|TD|TD_M2|TP|TP_M2)? (?P<name>.*) : (?P<day>(lundi|mardi|mercredi|jeudi|vendredi)) (?P<startime>.*) \(durée : (?P<duration>.*)\)")
                     .unwrap()
                     .captures(i.value().attr("title").unwrap())
                     .unwrap();
@@ -79,6 +80,7 @@ pub async fn timetable(
                 category: match matches
                 .name("type")
                 .map_or("", |m| m.as_str()) {
+                    /* TODO: Instead of searching *_M2, just find any TD_* and TP_* */
                     "COURS" => [models::Category::Cours].into(),
                     "TP" | "TP_M2" => [models::Category::TP].into(),
                     "TD" | "TD_M2" => [models::Category::TD].into(),
