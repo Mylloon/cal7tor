@@ -1,4 +1,5 @@
 use clap::Parser;
+use dialoguer::Input;
 use regex::Regex;
 
 mod filter;
@@ -33,6 +34,10 @@ struct Args {
     /// Doesn't distinguish TD from TP
     #[clap(short, long)]
     td_are_tp: bool,
+
+    /// First day of your year
+    #[clap(short, long)]
+    first_day: Option<String>,
 }
 
 #[tokio::main]
@@ -58,8 +63,17 @@ async fn main() {
 
     timetable = filter::timetable(timetable, args.td_are_tp);
 
+    let date = match args.first_day {
+        None => Input::new()
+            .with_prompt("Début des cours de l'année")
+            .default(info::get_start_date(level, args.semester, args.year, &user_agent).await)
+            .interact_text()
+            .unwrap(),
+        Some(day) => day,
+    };
+
     println!("Récupération des informations par rapport à l'année...");
-    let info = info::info(level, args.semester, args.year, &user_agent).await;
+    let info = info::info(args.semester, args.year, &date);
 
     if args.export.is_some() {
         // Export the calendar

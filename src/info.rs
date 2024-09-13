@@ -8,12 +8,12 @@ use crate::utils::{
     models::{Info, InfoList, InfoType},
 };
 
-pub async fn info(
+pub async fn get_start_date(
     level: i8,
     semester_opt: Option<i8>,
     year_opt: Option<i32>,
     user_agent: &str,
-) -> Info {
+) -> String {
     let semester = get_semester(semester_opt);
     let year = get_year(year_opt, semester);
 
@@ -34,14 +34,15 @@ pub async fn info(
         .inner_html();
 
     let re = Regex::new(r"\d{1,2} (septembre|octobre)").unwrap();
-    let date = re.captures(&raw_data).and_then(|caps| caps.get(0)).map_or(
-        {
-            let default = "1 septembre";
-            println!("Can't find the first week of school, default to : {default}");
-            default
-        },
-        |m| m.as_str(),
-    );
+
+    re.captures(&raw_data)
+        .and_then(|caps| caps.get(0))
+        .map_or("1 septembre".to_owned(), |m| m.as_str().to_owned())
+}
+
+pub fn info(semester_opt: Option<i8>, year_opt: Option<i32>, date: &str) -> Info {
+    let semester = get_semester(semester_opt);
+    let year = get_year(year_opt, semester);
 
     // 1st semester
     let weeks_s1_1 = 6; // Weeks before break
@@ -119,7 +120,7 @@ fn anglophonization(date: &str) -> String {
         // Use 12:00 and UTC TZ for chrono parser
         "{} 12:00 +0000",
         // Replace french by english month
-        re.replace_all(date, |cap: &Captures| match &cap[0] {
+        re.replace_all(&date.to_lowercase(), |cap: &Captures| match &cap[0] {
             month if dico.contains_key(month) => dico.get(month).unwrap(),
             month => {
                 panic!("Unknown month: {month}")
