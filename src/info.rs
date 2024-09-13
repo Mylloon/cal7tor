@@ -40,7 +40,7 @@ pub async fn get_start_date(
         .map_or("1 septembre".to_owned(), |m| m.as_str().to_owned())
 }
 
-pub fn info(semester_opt: Option<i8>, year_opt: Option<i32>, date: &str) -> Info {
+pub fn info(semester_opt: Option<i8>, year_opt: Option<i32>, date: &str, skip_week: bool) -> Info {
     let semester = get_semester(semester_opt);
     let year = get_year(year_opt, semester);
 
@@ -60,8 +60,10 @@ pub fn info(semester_opt: Option<i8>, year_opt: Option<i32>, date: &str) -> Info
     let cours_s1 = vec![(date_s1_1, weeks_s1_1), (date_s1_2, weeks_s1_2)];
     let cours_s2 = vec![(date_s2_1, weeks_s2_1), (date_s2_2, weeks_s2_2)];
 
-    let tdtp_s1 = derive_from_cours(&cours_s1);
-    let tdtp_s2 = derive_from_cours(&cours_s2);
+    let delta = i64::from(skip_week);
+
+    let tdtp_s1 = derive_from_cours(&cours_s1, delta);
+    let tdtp_s2 = derive_from_cours(&cours_s2, delta);
 
     HashMap::from([
         (
@@ -82,13 +84,16 @@ pub fn info(semester_opt: Option<i8>, year_opt: Option<i32>, date: &str) -> Info
 }
 
 /// Find TD/TP dates, based on the ones from courses
-fn derive_from_cours(courses: &InfoList) -> Vec<(DateTime<Utc>, i64)> {
+fn derive_from_cours(courses: &InfoList, delta: i64) -> Vec<(DateTime<Utc>, i64)> {
     // TD/TP start one week after courses
     let before_break = courses.first().unwrap();
     let after_break = courses.last().unwrap();
     vec![
-        (before_break.0 + Duration::weeks(1), before_break.1 - 1),
-        (after_break.0, after_break.1 + 1),
+        (
+            before_break.0 + Duration::weeks(delta),
+            before_break.1 - delta,
+        ),
+        (after_break.0, after_break.1 + delta),
     ]
 }
 

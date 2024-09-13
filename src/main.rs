@@ -38,6 +38,10 @@ struct Args {
     /// First day of your year
     #[clap(short, long)]
     first_day: Option<String>,
+
+    /// If TD/TP start a week after courses
+    #[clap(short, long)]
+    week_skip: bool,
 }
 
 #[tokio::main]
@@ -73,7 +77,7 @@ async fn main() {
     };
 
     println!("Récupération des informations par rapport à l'année...");
-    let info = info::info(args.semester, args.year, &date);
+    let info = info::info(args.semester, args.year, &date, args.week_skip);
 
     if args.export.is_some() {
         // Export the calendar
