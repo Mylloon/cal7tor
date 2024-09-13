@@ -90,10 +90,13 @@ pub async fn timetable(
                         [models::Category::Cours].into()
                     },
                 },
-                name: matches
-                    .name("name")
-                    .unwrap()
-                    .as_str().to_owned(),
+                name: Regex::new(r"[ -][ML][1-3]$").unwrap().replace(
+                    matches
+                        .name("name")
+                        .unwrap()
+                        .as_str(),
+                    ""
+                ).to_string(),
                 professor: if let Some(raw_prof) = i.select(&sel_small).last() {
                         match raw_prof.inner_html() {
                             i if i.starts_with("<span") => None,
