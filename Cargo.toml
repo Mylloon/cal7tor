@@ -6,7 +6,7 @@ edition = "2021"
 description = "Timetable extractor for the Paris Cité master's degree in IT"
 readme = "README.md"
 repository = "https://git.mylloon.fr/Anri/cal7tor"
-keywords = ["scrape", "calendar"]
+keywords = ["scrape", "calendar", "paris diderot", "paris cité"]
 publish = false
 license = "AGPL-3.0-or-later"
 
