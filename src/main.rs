@@ -27,10 +27,6 @@ struct Args {
     #[clap(short, long, value_name = "FILE NAME")]
     export: Option<String>,
 
-    /// Size of cell of the timetable (irrelevant when exporting)
-    #[clap(short, long, value_name = "CELL LENGTH", default_value_t = 35)]
-    cl: usize,
-
     /// Doesn't distinguish TD from TP
     #[clap(short, long)]
     td_are_tp: bool,
@@ -90,6 +86,6 @@ async fn main() {
     } else {
         // Show the calendar
         println!("Affichage...");
-        timetable::display(&timetable, args.cl);
+        timetable::display(&timetable);
     }
 }
