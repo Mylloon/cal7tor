@@ -6,7 +6,7 @@ use scraper::Selector;
 use std::{collections::HashMap, sync::Arc};
 
 use crate::utils::{
-    get_hours, get_semester, get_webpage, get_year,
+    format_time_slot, get_hours, get_semester, get_webpage, get_year,
     models::{Info, InfoList},
     Capitalize,
 };
@@ -270,6 +270,28 @@ fn add_courses(
 }
 
 /// Display the timetable
-pub fn display(timetable: &(Arc<[String]>, (usize, Vec<models::Day>))) {
-    todo!("{:#?}", timetable)
+pub fn display(timetable: &(Arc<[String]>, (usize, Vec<Day>))) {
+    for day in &timetable.1 .1 {
+        for (index, course_option) in day.courses.iter().enumerate() {
+            if let Some(course) = course_option {
+                if index == 0 {
+                    println!("\n{}:", day.name);
+                }
+
+                println!(
+                    "  {} - {} : {} ({}) // {}",
+                    format_time_slot(course.start, course.size),
+                    course
+                        .category
+                        .iter()
+                        .map(std::string::ToString::to_string)
+                        .collect::<Vec<String>>()
+                        .join(", "),
+                    course.name,
+                    course.room,
+                    course.professor.as_deref().unwrap_or("N/A"),
+                );
+            }
+        }
+    }
 }

@@ -167,3 +167,12 @@ pub fn get_count<'a>(
 
     (courses, counts)
 }
+
+pub fn format_time_slot(start: usize, size: usize) -> String {
+    let start_hour = 8 + (start * 15) / 60;
+    let start_minute = (start * 15) % 60;
+    let end_hour = start_hour + (size * 15) / 60;
+    let end_minute = (start_minute + (size * 15)) % 60;
+
+    format!("{start_hour:02}h{start_minute:02}-{end_hour:02}h{end_minute:02}")
+}
