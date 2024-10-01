@@ -88,10 +88,8 @@ async fn main() {
 
         println!("Fichier .ICS construit et exporté => {filename}");
     } else {
-        println!("\x1b[93mNOTICE: IT WON'T WORK!!!\x1b[0m");
         // Show the calendar
         println!("Affichage...");
         timetable::display(&timetable, args.cl);
-        println!("Vous devrez peut-être mettre votre terminal en plein écran si ce n'est pas déjà le cas.");
     }
 }
