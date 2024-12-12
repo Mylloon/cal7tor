@@ -177,16 +177,16 @@ pub fn build(timetable: &models::Timetable, dates: &Info) -> Vec<models::Course>
         &schedules,
         &timetable.1 .1,
         &datetimes.course,
-        &Some(vec![models::Category::Cours]),
-        &None,
+        Some(&vec![models::Category::Cours]),
+        None,
     );
     add_courses(
         &mut semester,
         &schedules,
         &timetable.1 .1,
         &datetimes.td_tp,
-        &None,
-        &Some(vec![models::Category::Cours]),
+        None,
+        Some(&vec![models::Category::Cours]),
     );
 
     semester
@@ -205,9 +205,9 @@ fn add_courses(
     // Current courses list
     info: &InfoList,
     // List of category allowed
-    keep: &Option<Vec<models::Category>>,
+    keep: Option<&Vec<models::Category>>,
     // List of category excluded
-    exclude: &Option<Vec<models::Category>>,
+    exclude: Option<&Vec<models::Category>>,
 ) {
     let before_break = info.first().unwrap();
     let mut date = before_break.0;
@@ -224,9 +224,8 @@ fn add_courses(
 
                     // Check keep and exclude filters
                     if keep
-                        .clone()
                         .is_some_and(|list| !course.category.iter().any(|item| list.contains(item)))
-                        || exclude.clone().is_some_and(|list| {
+                        || exclude.is_some_and(|list| {
                             course.category.iter().any(|item| list.contains(item))
                         })
                     {
