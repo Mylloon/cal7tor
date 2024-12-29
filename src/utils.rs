@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use chrono::{Datelike, Utc};
 use scraper::Html;
@@ -123,7 +123,13 @@ pub async fn get_webpage(
 
     // Use custom User-Agent
     let client = reqwest::Client::builder().user_agent(user_agent).build()?;
-    let html = client.get(&url).send().await?.text().await?;
+    let html = client
+        .get(&url)
+        .timeout(Duration::from_secs(5))
+        .send()
+        .await?
+        .text()
+        .await?;
 
     // Panic on error
     crate::utils::check_errors(&html, &url);
