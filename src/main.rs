@@ -79,10 +79,8 @@ async fn main() {
     println!("Récupération des informations par rapport à l'année...");
     let info = info::info(args.semester, args.year, &date, args.week_skip);
 
-    if args.export.is_some() {
+    if let Some(mut filename) = args.export {
         // Export the calendar
-        let mut filename = args.export.unwrap();
-
         let builded_timetable = timetable::build(&timetable, &info);
         ics::export(builded_timetable, &mut filename, !args.no_tz);
 
