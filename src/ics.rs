@@ -9,20 +9,26 @@ use ics::{
     Event, ICalendar, Standard,
 };
 
-pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut String) {
+pub fn export(
+    courses: Vec<crate::timetable::models::Course>,
+    filename: &mut String,
+    with_tz: bool,
+) {
     let mut calendar = ICalendar::new("2.0", "cal7tor");
 
     // Add Europe/Paris timezone
     let timezone_name = "Europe/Paris";
-    calendar.add_timezone(ics::TimeZone::standard(
-        timezone_name,
-        Standard::new(
-            // Add a Z because it's UTC
-            dt_ical(chrono::Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap()) + "Z",
-            "+0100",
-            "+0200",
-        ),
-    ));
+    if with_tz {
+        calendar.add_timezone(ics::TimeZone::standard(
+            timezone_name,
+            Standard::new(
+                // Add a Z because it's UTC
+                dt_ical(chrono::Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).unwrap()) + "Z",
+                "+0100",
+                "+0200",
+            ),
+        ));
+    }
 
     // Create events which contains the information regarding the course
     for course in courses {
@@ -50,12 +56,16 @@ pub fn export(courses: Vec<crate::timetable::models::Course>, filename: &mut Str
 
         // Start time of the course
         let mut date_start = DtStart::new(dt_ical(course.dtstart.unwrap()));
-        date_start.add(TzIDParam::new(timezone_name));
+        if with_tz {
+            date_start.add(TzIDParam::new(timezone_name));
+        }
         event.push(date_start);
 
         // End time of the course
         let mut date_end = DtEnd::new(dt_ical(course.dtend.unwrap()));
-        date_end.add(TzIDParam::new(timezone_name));
+        if with_tz {
+            date_end.add(TzIDParam::new(timezone_name));
+        }
         event.push(date_end);
 
         // Room location

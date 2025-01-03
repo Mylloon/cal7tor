@@ -38,6 +38,10 @@ struct Args {
     /// If TD/TP start a week after courses
     #[clap(short, long)]
     week_skip: bool,
+
+    /// If the exported ICS file should not use the timezone
+    #[clap(short, long)]
+    no_tz: bool,
 }
 
 #[tokio::main]
@@ -80,7 +84,7 @@ async fn main() {
         let mut filename = args.export.unwrap();
 
         let builded_timetable = timetable::build(&timetable, &info);
-        ics::export(builded_timetable, &mut filename);
+        ics::export(builded_timetable, &mut filename, !args.no_tz);
 
         println!("Fichier .ICS construit et exporté => {filename}");
     } else {
