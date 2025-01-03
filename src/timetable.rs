@@ -6,8 +6,8 @@ use scraper::Selector;
 use std::{collections::HashMap, sync::Arc};
 
 use crate::utils::{
-    self, get_hours, get_semester, get_webpage, get_year,
-    models::{Info, InfoList, Position, TabChar},
+    format_time_slot, get_hours, get_semester, get_webpage, get_year,
+    models::{Info, InfoList},
     Capitalize,
 };
 
@@ -270,101 +270,28 @@ fn add_courses(
 }
 
 /// Display the timetable
-pub fn display(timetable: &(Arc<[String]>, (usize, Vec<models::Day>)), cell_length: usize) {
-    // Cell length for hours
-    let clh = 11;
-    // Cell number
-    let cn = 6;
-    // 3/4 of cell length
-    let quarter = (3 * cell_length) / 4;
+pub fn display(timetable: &(Arc<[String]>, (usize, Vec<Day>))) {
+    for day in &timetable.1 .1 {
+        for (index, course_option) in day.courses.iter().enumerate() {
+            if let Some(course) = course_option {
+                if index == 0 {
+                    println!("\n{}:", day.name);
+                }
 
-    let sep = TabChar::Bv.val();
-
-    // Top of the tab
-    utils::line_table(clh, cell_length, cn, &Position::Top, &HashMap::new());
-
-    // First empty case
-    print!("{}{:^clh$}{}", sep, "", sep);
-
-    // Print day's of the week
-    let mut days = HashMap::new();
-    for (i, data) in timetable.1 .1.iter().enumerate() {
-        days.insert(i, &data.name);
-        print!("{:^cell_length$}{}", &data.name, sep);
-    }
-
-    // Store the data of the course for utils::line_table
-    let mut next_skip = HashMap::new();
-    // For each hours -- i the hour's number
-    for (i, hour) in timetable.0.iter().enumerate() {
-        // Draw separator line
-        utils::line_table(clh, cell_length, cn, &Position::Middle, &next_skip);
-
-        // Reset
-        next_skip = HashMap::new();
-
-        // Print hour
-        print!("{sep}{hour:^clh$}");
-
-        // For all the days - `j` the day's number
-        for (j, day) in timetable.1 .1.iter().enumerate() {
-            // True if we found something about the slot we are looking for
-            let mut info_slot = false;
-
-            // For all the courses of each days - `k` the possible course.start
-            for (k, course_opt) in day.courses.iter().enumerate() {
-                match course_opt {
-                    // If there is a course
-                    Some(course) => {
-                        // Check the course's hour
-                        if i == course.start {
-                            // If the course uses more than one time slot
-                            if course.size > 1 {
-                                // If the data is too long
-                                if course.name.len() > quarter {
-                                    let data = utils::split_half(&course.name);
-                                    next_skip.insert(j, data.1.trim());
-                                    print!("{}{:^cell_length$}", sep, data.0.trim());
-                                } else {
-                                    next_skip.insert(j, &course.name);
-                                    print!("{}{:^cell_length$}", sep, "");
-                                }
-                                info_slot = true;
-                                break;
-                            }
-
-                            // Else simply print the course
-                            // If the data is too long
-                            if course.name.len() > quarter {
-                                print!("{}{:^cell_length$}", sep, utils::etc_str(&course.name));
-                            } else {
-                                print!("{}{:^cell_length$}", sep, &course.name);
-                            }
-                            info_slot = true;
-                            break;
-                        }
-                    }
-                    // If no course was found
-                    None => {
-                        // Verify the "no course" is in the correct day and hour
-                        if *days.get(&j).unwrap() == &day.name.to_string() && k == i {
-                            // If yes print empty row because there is no course
-                            print!("{}{:^cell_length$}", sep, "");
-                            info_slot = true;
-                            break;
-                        }
-                        // Else it was a course of another day/time
-                    }
-                };
-            }
-            if !info_slot {
-                // We found nothing about the slot because the precedent course
-                // takes more place than one slot
-                print!("{}{:^cell_length$}", sep, "");
+                println!(
+                    "  {} - {} : {} ({}) // {}",
+                    format_time_slot(course.start, course.size),
+                    course
+                        .category
+                        .iter()
+                        .map(std::string::ToString::to_string)
+                        .collect::<Vec<String>>()
+                        .join(", "),
+                    course.name,
+                    course.room,
+                    course.professor.as_deref().unwrap_or("N/A"),
+                );
             }
         }
-        print!("{sep}");
     }
-    // Bottom of the table
-    utils::line_table(clh, cell_length, cn, &Position::Bottom, &HashMap::new());
 }

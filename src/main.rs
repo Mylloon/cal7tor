@@ -27,10 +27,6 @@ struct Args {
     #[clap(short, long, value_name = "FILE NAME")]
     export: Option<String>,
 
-    /// Size of cell of the timetable (irrelevant when exporting)
-    #[clap(short, long, value_name = "CELL LENGTH", default_value_t = 35)]
-    cl: usize,
-
     /// Doesn't distinguish TD from TP
     #[clap(short, long)]
     td_are_tp: bool,
@@ -88,10 +84,8 @@ async fn main() {
 
         println!("Fichier .ICS construit et exporté => {filename}");
     } else {
-        println!("\x1b[93mNOTICE: IT WON'T WORK!!!\x1b[0m");
         // Show the calendar
         println!("Affichage...");
-        timetable::display(&timetable, args.cl);
-        println!("Vous devrez peut-être mettre votre terminal en plein écran si ce n'est pas déjà le cas.");
+        timetable::display(&timetable);
     }
 }
