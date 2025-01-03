@@ -65,7 +65,7 @@ async fn main() {
 
     let date = match args.first_day {
         None => Input::new()
-            .with_prompt("Début des cours de l'année")
+            .with_prompt("Début des cours de l'année (première période)")
             .default(info::get_start_date(level, args.semester, args.year, &user_agent).await)
             .interact_text()
             .unwrap(),
