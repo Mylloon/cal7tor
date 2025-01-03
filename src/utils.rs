@@ -176,3 +176,18 @@ pub fn format_time_slot(start: usize, size: usize) -> String {
 
     format!("{start_hour:02}h{start_minute:02}-{end_hour:02}h{end_minute:02}")
 }
+
+/// Based on the user input and some default values, find the correct repartition of weeks between the break
+pub fn get_period_weeks(semester: i32, user_input: Option<i32>) -> (i64, i64) {
+    if let Some(nb_weeks) = user_input {
+        // When weeks are forced by the user, we simply cut the period in half
+        let half = nb_weeks / 2;
+        return (half.into(), (nb_weeks - half).into());
+    }
+
+    match semester {
+        1 => (6, 7),
+        2 => (11, 1),
+        _ => panic!("Weird semester"),
+    }
+}

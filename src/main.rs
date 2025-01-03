@@ -8,6 +8,7 @@ mod info;
 mod timetable;
 mod utils;
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Parser)]
 #[clap(version, about, long_about = None)]
 struct Args {
@@ -31,17 +32,25 @@ struct Args {
     #[clap(short, long)]
     td_are_tp: bool,
 
+    /// Number of weeks for the period
+    #[clap(short, long, value_parser)]
+    weeks: Option<i32>,
+
     /// First day of your year
-    #[clap(short, long)]
+    #[clap(long)]
     first_day: Option<String>,
 
     /// If TD/TP start a week after courses
-    #[clap(short, long)]
+    #[clap(long)]
     week_skip: bool,
 
     /// If the exported ICS file should not use the timezone
-    #[clap(short, long)]
+    #[clap(long)]
     no_tz: bool,
+
+    /// Guess the holidays and apply it to the generated calendar
+    #[clap(long)]
+    holidays: bool,
 }
 
 #[tokio::main]
@@ -69,7 +78,7 @@ async fn main() {
 
     let date = match args.first_day {
         None => Input::new()
-            .with_prompt("Début des cours de l'année (première période)")
+            .with_prompt("Début des cours de la période")
             .default(info::get_start_date(level, args.semester, args.year, &user_agent).await)
             .interact_text()
             .unwrap(),
@@ -77,7 +86,14 @@ async fn main() {
     };
 
     println!("Récupération des informations par rapport à l'année...");
-    let info = info::info(args.semester, args.year, &date, args.week_skip);
+    let info = info::info(
+        args.semester,
+        args.year,
+        &date,
+        args.week_skip,
+        args.holidays,
+        args.weeks,
+    );
 
     if let Some(mut filename) = args.export {
         // Export the calendar

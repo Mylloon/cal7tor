@@ -4,7 +4,7 @@ use scraper::Selector;
 use std::{collections::HashMap, sync::Arc};
 
 use crate::utils::{
-    get_semester, get_webpage, get_year,
+    get_period_weeks, get_semester, get_webpage, get_year,
     models::{Info, InfoList, InfoType},
 };
 
@@ -33,28 +33,47 @@ pub async fn get_start_date(
         .unwrap()
         .inner_html();
 
-    let re = Regex::new(r"\d{1,2} (septembre|octobre)").unwrap();
+    let first_semester = semester == 1;
 
-    re.captures(&raw_data)
-        .and_then(|caps| caps.get(0))
-        .map_or("1 septembre".to_owned(), |m| m.as_str().to_owned())
+    let re = Regex::new(if first_semester {
+        r"\d{1,2} (septembre|octobre)"
+    } else {
+        r"\d{1,2} (janvier|février)"
+    })
+    .unwrap();
+
+    re.captures(&raw_data).and_then(|caps| caps.get(0)).map_or(
+        if first_semester {
+            "1 septembre"
+        } else {
+            "1 janvier"
+        }
+        .to_owned(),
+        |m| m.as_str().to_owned(),
+    )
 }
 
-pub fn info(semester_opt: Option<i8>, year_opt: Option<i32>, date: &str, skip_week: bool) -> Info {
+#[allow(clippy::bool_to_int_with_if)]
+pub fn info(
+    semester_opt: Option<i8>,
+    year_opt: Option<i32>,
+    date: &str,
+    skip_week: bool,
+    holidays: bool,
+    weeks: Option<i32>,
+) -> Info {
     let semester = get_semester(semester_opt);
     let year = get_year(year_opt, semester);
 
     // 1st semester
-    let weeks_s1_1 = 6; // Weeks before break
-    let weeks_s1_2 = 7; // Weeks after break
+    let (weeks_s1_1, weeks_s1_2) = get_period_weeks(1, weeks); // Weeks before and after break
     let date_s1_1 = get_date(&format!("{} {}", date, year.split_once('-').unwrap().0)); // Get first week of school
-    let date_s1_2 = date_s1_1 + Duration::weeks(weeks_s1_1 + 1); // Back-to-school week - add week of holidays
+    let date_s1_2 = date_s1_1 + Duration::weeks(weeks_s1_1 + if holidays { 1 } else { 0 }); // Back-to-school week
 
     // 2nd semester
-    let weeks_s2_1 = 11; // Weeks before break
-    let weeks_s2_2 = 1; // Weeks after break
-    let date_s2_1 = date_s1_2 + Duration::weeks(weeks_s1_2 + 4); // Get first week - add week of 'christmas/new year holidays'
-    let date_s2_2 = date_s2_1 + Duration::weeks(weeks_s2_1 + 2); // Back-to-school week - add week of holidays
+    let (weeks_s2_1, weeks_s2_2) = get_period_weeks(2, weeks); // Weeks before and after break
+    let date_s2_1 = get_date(&format!("{} {}", date, year.split_once('-').unwrap().1)); // Get first week
+    let date_s2_2 = date_s2_1 + Duration::weeks(weeks_s2_1 + if holidays { 2 } else { 0 }); // Back-to-school week
 
     // Group courses values and derive it for TD/TP
     let cours_s1 = vec![(date_s1_1, weeks_s1_1), (date_s1_2, weeks_s1_2)];
